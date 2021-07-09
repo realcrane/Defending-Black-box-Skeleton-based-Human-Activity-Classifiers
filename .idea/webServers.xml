@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="542351b7-d2e9-4f40-86f3-ee295457bff7" name="uol-pc-211083">
+        <fileTransfer accessType="SFTP" host="localhost" port="7000" sshConfigId="af7e0f19-e3bc-4951-a3df-7ef612d2d4c6" sshConfig="scshwa@localhost:7000 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

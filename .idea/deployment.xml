@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="scshwa@localhost:7000" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="scshwa@localhost:6000 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/csunix/scshwa/remote2/scshwa/projects/AdversarialTraining " local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="scshwa@localhost:7000">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/csunix/scshwa/remote/scshwa/projects/AdversarialTraining" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="uol-pc-211083">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/csunix/scshwa/remote/scshwa/projects" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>
