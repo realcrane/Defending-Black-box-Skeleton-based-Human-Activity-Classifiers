@@ -56,7 +56,7 @@ class ExtendedBayesianClassifier(ActionClassifier):
         self.classificationLoss()
     def configureOptimiser(self):
 
-        self.optimiserList = [SGAdaHMC(self.modelList[i].parameters(), config=dict())
+        self.optimiserList = [SGAdaHMC(self.modelList[i].model.parameters(), config=dict())
                               for i in range(self.args.args.bayesianModelNum)]
 
     def classificationLoss(self):
