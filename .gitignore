@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 # C extensions
-
+*.xlsx
 $GIT_DIR/code/matlab/
 *.so
 

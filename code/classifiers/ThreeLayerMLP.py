@@ -39,28 +39,37 @@ class ThreeLayerMLP(ActionClassifier):
                 return logits
 
         # create the train data loader, if the routine is 'attack', then the data will be attacked in an Attacker
-        if self.args.routine == 'train' or self.args.routine == 'attack' or self.args.routine == 'adTrain':
-            self.model = Classifier(self.trainloader)
-        elif self.args.routine == 'test' or self.args.routine == 'gatherCorrectPrediction':
-            self.model = Classifier(self.testloader)
+        if self.args.routine == 'train' or self.args.routine == 'attack' \
+                or self.args.routine == 'adTrain' or self.args.routine == 'bayesianTrain':
+            self.model = Classifier(self.args, self.trainloader)
+        elif self.args.routine == 'test' or self.args.routine == 'gatherCorrectPrediction' \
+                or self.args.routine == 'bayesianTest':
+            self.model = Classifier(self.args, self.testloader)
+            self.model.eval()
         else:
             print("no model is created")
+
+        self.retFolder = self.args.retFolder + self.args.dataset + '/' + self.args.classifier + '/'
+
         if len(self.args.trainedModelFile) > 0:
             if len(self.args.args.adTrainer) == 0:
-                self.model.load_state_dict(torch.load(self.args.retFolder + self.args.classifier + '/' + self.args.trainedModelFile))
+                self.model.load_state_dict(torch.load(self.retFolder + self.args.trainedModelFile))
             else:
-                self.model.load_state_dict(
-                    torch.load(self.args.retFolder + self.args.classifier + '/' + self.args.args.adTrainer + '/' + self.args.trainedModelFile))
+                if self.args.args.bayesianTraining:
+                    self.model.load_state_dict(torch.load(self.args.retFolder + self.args.dataset + '/' +
+                                        self.args.args.baseClassifier + '/' + self.args.trainedModelFile))
+                else:
+                    self.model.load_state_dict(
+                        torch.load(self.retFolder + self.args.args.adTrainer + '/' + self.args.trainedModelFile))
 
         self.configureOptimiser()
         self.classificationLoss()
-
         self.model.to(device)
 
     def configureOptimiser(self):
 
-        self.optimiser = torch.optim.Adam(self.model.parameters(), lr=0.001, betas=(0.9, 0.999),
-                                          eps=1e-08, weight_decay=0, amsgrad=False)
+        self.optimiser = torch.optim.Adam(self.model.parameters(), lr=self.args.args.learningRate, betas=(0.9, 0.999),
+                                          eps=1e-08, weight_decay=0.0001, amsgrad=False)
 
     def classificationLoss(self):
 
@@ -84,7 +93,7 @@ class ThreeLayerMLP(ActionClassifier):
                 pred = self.model(X)
                 loss = self.classLoss(pred, y)
 
-                epLoss += loss
+                epLoss += loss.detach().item()
                 # Backpropagation
                 self.optimiser.zero_grad()
                 loss.backward()
@@ -98,6 +107,8 @@ class ThreeLayerMLP(ActionClassifier):
             epLoss /= batchNum
             logger.add_scalar('Loss/train', epLoss, ep)
             if epLoss < bestLoss:
+                if not os.path.exists(self.retFolder):
+                    os.makedirs(self.retFolder)
                 print(f"epoch: {ep} per epoch average training loss improves from: {bestLoss} to {epLoss}")
                 torch.save(self.model.state_dict(), self.args.retFolder+ self.args.classifier + '/'+'minLossModel.pth')
                 bestLoss = epLoss
@@ -109,6 +120,7 @@ class ThreeLayerMLP(ActionClassifier):
             for v, (tx, ty) in enumerate(self.validationloader):
                 pred = self.model(tx)
                 valLoss += self.classLoss(pred, ty)
+                valLoss += loss.detach().item()
                 vbatch += 1
 
             valLoss /= vbatch
@@ -116,7 +128,7 @@ class ThreeLayerMLP(ActionClassifier):
             self.model.train()
             if valLoss < bestValLoss:
                 print(f"epoch: {ep} per epoch average validation loss improves from: {bestValLoss} to {valLoss}")
-                torch.save(self.model.state_dict(), self.args.retFolder+ self.args.classifier + '/'+'minValLossModel.pth')
+                torch.save(self.model.state_dict(), self.args.retFolder + 'minValLossModel.pth')
                 bestValLoss = valLoss
 
     #this function tests the trained classifier and also save correctly classified samples in 'adClassTrain.npz' for
@@ -126,13 +138,12 @@ class ThreeLayerMLP(ActionClassifier):
             print('no pre-trained model to load')
             return
 
-        self.model.eval()
 
         misclassified = 0
         results = np.empty(len(self.testloader.dataset.rlabels))
         for v, (tx, ty) in enumerate(self.testloader):
             pred = torch.argmax(self.model(tx), dim=1)
-            results[v*self.args.batchSize:(v+1)*self.args.batchSize] = pred
+            results[v*self.args.batchSize:(v+1)*self.args.batchSize] = pred.cpu()
             diff = (pred - ty) != 0
             misclassified += torch.sum(diff)
 
@@ -150,7 +161,6 @@ class ThreeLayerMLP(ActionClassifier):
             print('no pre-trained model to load')
             return
 
-        self.model.eval()
 
         # collect data from the training data
         misclassified = 0
@@ -158,17 +168,16 @@ class ThreeLayerMLP(ActionClassifier):
         for v, (tx, ty) in enumerate(self.testloader):
             pred = torch.argmax(self.model(tx), dim=1)
             diff = (pred - ty) == 0
-            results[v * self.args.batchSize:(v + 1) * self.args.batchSize] = diff
+            results[v * self.args.batchSize:(v + 1) * self.args.batchSize] = diff.cpu()
 
         adData = self.testloader.dataset.data[results.astype(bool)]
         adLabels = self.testloader.dataset.rlabels[results.astype(bool)]
 
         print(f"{len(adLabels)} out of {len(results)} motions are collected")
 
-        path = self.args.retFolder + self.args.classifier + '/'
-        if not os.path.exists(path):
-            os.mkdir(path)
-        np.savez_compressed(path+self.args.adTrainFile, clips=adData, classes=adLabels)
+        if not os.path.exists(self.retFolder):
+            os.mkdir(self.retFolder)
+        np.savez_compressed(self.retFolder+self.args.adTrainFile, clips=adData, classes=adLabels)
 
         return len(adLabels)
 

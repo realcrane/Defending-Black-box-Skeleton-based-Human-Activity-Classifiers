@@ -41,7 +41,7 @@ def parameteSettingForAdTrainers(ap):
                     default='')
     #parse args for EBMATrainer
     ap.add_argument("--burnIn", type=int, required=False, help="training the classifier in normal training mode for -burnIn steps",
-                    default=10)
+                    default=0)
     ap.add_argument("--samplingStep", type=int, required=False, help="sampling step for SGLD", default=10)
     ap.add_argument("--drvWeight", type=float, required=False, help="weight for the motion derivatives", default=1e-5)
     ap.add_argument("--bufferSize", type=int, required=False, help="the replay buffer size for SGLD sampling",default=100)

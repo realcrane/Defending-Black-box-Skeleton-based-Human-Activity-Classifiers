@@ -152,6 +152,7 @@ class STGCN(ActionClassifier):
         elif self.args.routine == 'test' or self.args.routine == 'gatherCorrectPrediction' \
                 or self.args.routine == 'bayesianTest':
             self.model = Classifier(self.args, self.testloader)
+            self.model.eval()
         else:
             print("no model is created")
 
@@ -247,8 +248,6 @@ class STGCN(ActionClassifier):
             print('no pre-trained model to load')
             return
 
-        self.model.eval()
-
         misclassified = 0
         results = np.empty(len(self.testloader.dataset.rlabels))
         for v, (tx, ty) in enumerate(self.testloader):
@@ -271,7 +270,6 @@ class STGCN(ActionClassifier):
             print('no pre-trained model to load')
             return
 
-        self.model.eval()
 
         # collect data from the training data
         misclassified = 0

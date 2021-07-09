@@ -207,14 +207,15 @@ class EBMATrainer(AdversarialTrainer):
             logger.add_scalar('Loss/train/clf', epClfLoss, ep)
             if epLoss < bestLoss:
                 print(f"epoch: {ep} per epoch average training loss improves from: {bestLoss} to {epLoss}")
-                modelFile = self.retFolder + '/minLossModel_adtrained_' + str(epLoss) + '.pth'
-                torch.save(self.classifier.model.state_dict(), modelFile)
+                #modelFile = self.retFolder + '/minLossModel_adtrained_' + str(epLoss) + '.pth'
+                # modelFile = self.retFolder + '/minLossModel_adtrained.pth'
+                # torch.save(self.classifier.model.state_dict(), modelFile)
                 bestLoss = epLoss
 
             if epClfLoss < bestClfLoss:
                 print(f"epoch: {ep} per epoch average training clf loss improves from: {bestClfLoss} to {epClfLoss}")
-                modelFile = self.retFolder + '/minLossModel_adtrained.pth'
-                torch.save(self.classifier.model.state_dict(), modelFile)
+                # modelFile = self.retFolder + '/minLossModel_adtrained.pth'
+                # torch.save(self.classifier.model.state_dict(), modelFile)
                 bestClfLoss = epClfLoss
 
             # run validation and save a model if the best validation loss so far has been achieved.
@@ -258,8 +259,8 @@ class EBMATrainer(AdversarialTrainer):
             self.classifier.model.train()
             if valLoss < bestValLoss:
                 print(f"epoch: {ep} per epoch average validation loss improves from: {bestValLoss} to {valLoss}")
-                modelFile = self.retFolder + '/minValLossModel_adtrained_' + str(valLoss) + '.pth'
-                torch.save(self.classifier.model.state_dict(), modelFile)
+                #modelFile = self.retFolder + '/minValLossModel_adtrained_' + str(valLoss) + '.pth'
+                #torch.save(self.classifier.model.state_dict(), modelFile)
                 bestValLoss = valLoss
             if valClfLoss < bestValClfLoss:
                 print(f"epoch: {ep} per epoch average clf validation loss improves from: {bestValClfLoss} to {valClfLoss}")
@@ -344,21 +345,21 @@ class EBMATrainer(AdversarialTrainer):
                 logger.add_scalar(('Loss/train/clf/model%d' % i), epClfLoss[i], ep)
                 if epLoss[i] < bestLoss[i]:
                     print(f"epoch: {ep} model: {i} per epoch average training loss improves from: {bestLoss[i]} to {epLoss[i]}")
-
-                    modelFile = self.retFolder + '/' + str(i) + '_minLossAppendedModel_adtrained_' + str(epLoss[i]) + '.pth'
-                    torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
+                    # modelFile = self.retFolder + '/' + str(i) + '_minLossAppendedModel_adtrained_' + str(epLoss[i]) + '.pth'
+                    # torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
                     bestLoss[i] = epLoss[i]
 
                 if epClfLoss[i] < bestClfLoss[i]:
                     print(f"epoch: {ep} model: {i} per epoch average training clf loss improves from: {bestClfLoss[i]} to {epClfLoss[i]}")
-
-                    modelFile = self.retFolder + '/' + str(i) + '_minLossAppendedModel_adtrained.pth'
-                    torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
+                    #
+                    # modelFile = self.retFolder + '/' + str(i) + '_minLossAppendedModel_adtrained.pth'
+                    # torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
                     bestClfLoss[i] = epClfLoss[i]
 
             # run validation and save a model if the best validation loss so far has been achieved.
             valLoss = np.zeros(self.args.bayesianModelNum)
             valClfLoss = np.zeros(self.args.bayesianModelNum)
+            self.classifier.setEval()
             for i in range(self.args.bayesianModelNum):
                 vbatch = 0
                 for v, (tx, ty) in enumerate(self.classifier.testloader):
@@ -396,8 +397,8 @@ class EBMATrainer(AdversarialTrainer):
                 logger.add_scalar(('Loss/validation/clf/model%d' % i), valClfLoss[i], ep)
                 if valLoss[i] < bestValLoss[i]:
                     print(f"epoch: {ep} model: {i} per epoch average validation loss improves from: {bestValLoss[i]} to {valLoss[i]}")
-                    modelFile = self.retFolder + '/' + str(i) + '_minValLossAppendedModel_adtrained_' + str(valLoss[i]) + '.pth'
-                    torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
+                    #modelFile = self.retFolder + '/' + str(i) + '_minValLossAppendedModel_adtrained_' + str(valLoss[i]) + '.pth'
+                    #torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
 
                     bestValLoss[i] = valLoss[i]
                 if valClfLoss[i] < bestValClfLoss[i]:
@@ -406,7 +407,7 @@ class EBMATrainer(AdversarialTrainer):
                     torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
 
                     bestValClfLoss[i] = valClfLoss[i]
-
+            self.classifier.setTrain()
         return
 
 

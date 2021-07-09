@@ -56,7 +56,7 @@ class ExtendedBayesianClassifier(ActionClassifier):
         self.classificationLoss()
     def configureOptimiser(self):
 
-        self.optimiserList = [SGAdaHMC(self.modelList[i].parameters(), config=dict())
+        self.optimiserList = [SGAdaHMC(self.modelList[i].parameters(), config=dict(lr=0.001))
                               for i in range(self.args.args.bayesianModelNum)]
 
     def classificationLoss(self):
@@ -75,6 +75,14 @@ class ExtendedBayesianClassifier(ActionClassifier):
     def classificationLoss(self):
 
         self.classLoss = torch.nn.CrossEntropyLoss()
+
+    def setTrain(self):
+        for model in self.modelList:
+            model.model.train()
+
+    def setEval(self):
+        for model in self.modelList:
+            model.model.eval()
 
     # train does nothing here as this classifier can only be trained in the EBMATrainer
     def train(self):
