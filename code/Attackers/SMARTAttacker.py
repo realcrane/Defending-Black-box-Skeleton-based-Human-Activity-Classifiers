@@ -164,7 +164,7 @@ class SmartAttacker(ActionAttacker):
 
     def attack(self):
 
-        self.classifier.model.eval()
+        self.classifier.setEval()
 
         #set up the attack labels based on the attack type
         labels = self.classifier.trainloader.dataset.labels
@@ -191,7 +191,7 @@ class SmartAttacker(ActionAttacker):
 
 
                 # compute the classification loss and gradient
-                pred = self.classifier.model(adData)
+                pred = self.classifier.modelEval(adData)
                 predictedLabels = torch.argmax(pred, axis=1)
 
                 # computer the classfication loss gradient

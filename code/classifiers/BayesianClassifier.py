@@ -15,7 +15,7 @@ from datasets.dataloaders import *
 class ExtendedBayesianClassifier(ActionClassifier):
     def __init__(self, args):
         super().__init__(args)
-
+        args.args.bayesianTraining = True
         self.trainloader, self.validationloader, self.testloader = createDataLoader(args)
         if args.args.baseClassifier == '3layerMLP':
             self.classifier = ThreeLayerMLP(args)
@@ -56,7 +56,7 @@ class ExtendedBayesianClassifier(ActionClassifier):
         self.classificationLoss()
     def configureOptimiser(self):
 
-        self.optimiserList = [SGAdaHMC(self.modelList[i].parameters(), config=dict(lr=0.001))
+        self.optimiserList = [SGAdaHMC(self.modelList[i].parameters(), config=dict())
                               for i in range(self.args.args.bayesianModelNum)]
 
     def classificationLoss(self):
@@ -120,9 +120,9 @@ class ExtendedBayesianClassifier(ActionClassifier):
         adLabels = self.classifier.testloader.dataset.rlabels[results.astype(bool)]
 
         print(f"{len(adLabels)} out of {len(results)} motions are collected")
-
-        if not os.path.exists(self.retFolder):
-            os.mkdir(self.retFolder)
-        np.savez_compressed(self.retFolder + self.args.bayesianAdTrainFile, clips=adData, classes=adLabels)
+        path = self.args.args.retPath + '/' + self.args.args.dataset + '/' + self.args.args.classifier + '/'
+        if not os.path.exists(path):
+            os.makedirs(path)
+        np.savez_compressed(path + self.args.args.bayesianAdTrainFile, clips=adData, classes=adLabels)
 
         return len(adLabels)

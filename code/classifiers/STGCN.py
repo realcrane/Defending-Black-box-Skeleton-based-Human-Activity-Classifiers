@@ -181,6 +181,14 @@ class STGCN(ActionClassifier):
 
         self.classLoss = torch.nn.CrossEntropyLoss()
 
+    def setTrain(self):
+        self.model.train()
+    def setEval(self):
+        self.model.eval()
+
+    def modelEval(self, X, modelNo = -1):
+        return self.model(X)
+
     #this function is to train the classifier from scratch
     def train(self):
         size = len(self.trainloader.dataset)

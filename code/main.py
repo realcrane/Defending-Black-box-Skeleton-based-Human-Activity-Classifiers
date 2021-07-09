@@ -41,7 +41,7 @@ def parameteSettingForAdTrainers(ap):
                     default='')
     #parse args for EBMATrainer
     ap.add_argument("--burnIn", type=int, required=False, help="training the classifier in normal training mode for -burnIn steps",
-                    default=0)
+                    default=10)
     ap.add_argument("--samplingStep", type=int, required=False, help="sampling step for SGLD", default=10)
     ap.add_argument("--drvWeight", type=float, required=False, help="weight for the motion derivatives", default=1e-5)
     ap.add_argument("--bufferSize", type=int, required=False, help="the replay buffer size for SGLD sampling",default=100)
@@ -137,28 +137,20 @@ if __name__ == '__main__':
         classifier.test()
 
     elif routine == 'gatherCorrectPrediction':
-        if len(args.trainedAppendedModelFile) == 0:
-            classifier = loadClassifier(args)
-            classifier.collectCorrectPredictions()
-        else:
-            adTrainer = loadATrainer(args)
-            adTrainer.collectCorrectPredictions()
+        classifier = loadClassifier(args)
+        classifier.collectCorrectPredictions()
     elif routine == 'attack':
-        if len(args.trainedAppendedModelFile) == 0:
-            attacker = loadAttacker(args)
-            attacker.attack()
-        else:
-            adTrainer = loadATrainer(args)
-
+        attacker = loadAttacker(args)
+        attacker.attack()
     elif routine == 'adTrain':
         adTrainer = loadATrainer(args)
         adTrainer.adversarialTrain()
     elif routine == 'bayesianTrain':
-        args.bayesianTraining = True
+
         adTrainer = loadATrainer(args)
         adTrainer.bayesianAdversarialTrain()
     elif routine == 'bayesianTest':
-        args.bayesianTraining = True
+
         classifier = loadClassifier(args)
         classifier.test()
     # elif routine == 'adTest':
