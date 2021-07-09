@@ -4,6 +4,8 @@ __pycache__/
 *$py.class
 
 # C extensions
+
+$GIT_DIR/code/matlab/
 *.so
 
 # Distribution / packaging
