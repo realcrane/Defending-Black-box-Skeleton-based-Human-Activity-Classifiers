@@ -1,8 +1,0 @@
-#hdm05 and 3layerMLP
-Normal training test accurary: 41.24%
-Normal Adtrain motions: 219 out of 531
-SMART ab (cw 0.6) attack before adtrain: 91.07%
-
-Adversarial training test accurary: 48.78%
-Adversarial Adtrain motions: 259 out of 531
-SMART ab (cw 0.6) attack after adtrain: 78.94%
