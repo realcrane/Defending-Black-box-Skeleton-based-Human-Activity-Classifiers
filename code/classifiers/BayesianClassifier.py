@@ -37,8 +37,9 @@ class ExtendedBayesianClassifier(ActionClassifier):
                     torch.nn.ReLU()
                 )
             def forward(self, x):
-                x = self.classifier.model(x)
+                x = torch.nn.ReLU()(self.classifier.model(x))
                 logits = self.model(x)
+                logits = x + logits
                 return logits
 
 

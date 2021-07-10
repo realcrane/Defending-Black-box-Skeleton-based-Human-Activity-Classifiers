@@ -13,7 +13,7 @@ python main.py -classifier STGCN --routine test --dataset hdm05 --testFile class
 python main.py -classifier 3layerMLP --routine gatherCorrectPrediction --dataset hdm05 --testFile classTest.npz --trainedModelFile minValLossModel.pth --dataPath ../data/ -retPath ../results/ -cn 65
 python main.py -classifier STGCN --routine gatherCorrectPrediction --dataset hdm05 --testFile classTest.npz --trainedModelFile minValLossModel.pth --dataPath ../data/ -retPath ../results/ -cn 65
 
-###adversarial train&test models on hdm05 using EBMATrainer
+###ML-adversarial train&test models on hdm05 using EBMATrainer
 python main.py -classifier 3layerMLP --routine adTrain --dataset hdm05 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65
 python main.py -classifier 3layerMLP --routine test --dataset hdm05 -adTrainer EBMATrainer --testFile classTest.npz --trainedModelFile minValLossModel_adtrained.pth --dataPath ../data/ -retPath ../results/ -cn 65
 python main.py -classifier 3layerMLP --routine gatherCorrectPrediction -adTrainer EBMATrainer --dataset hdm05 --testFile classTest.npz --trainedModelFile minValLossModel_adtrained.pth --dataPath ../data/ -retPath ../results/ -cn 65 -adTrainFile adClassTrain_adtrained.npz
@@ -23,28 +23,39 @@ python main.py -classifier STGCN --routine test --dataset hdm05 -adTrainer EBMAT
 python main.py -classifier STGCN --routine gatherCorrectPrediction -adTrainer EBMATrainer --dataset hdm05 --testFile classTest.npz --trainedModelFile minValLossModel_adtrained.pth --dataPath ../data/ -retPath ../results/ -cn 65 -adTrainFile adClassTrain_adtrained.npz
 
 
-###bayesian adversarial train&test models on hdm05 using EBMATrainer
+###PT-bayesian adversarial train&test models on hdm05 using EBMATrainer
 python main.py -classifier ExtendedBayesian --baseClassifier STGCN --routine bayesianTrain --dataset hdm05 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65 --trainedModelFile minValLossModel.pth
 python main.py -classifier ExtendedBayesian --baseClassifier STGCN  --routine bayesianTest --dataset hdm05 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth
 python main.py -classifier ExtendedBayesian --baseClassifier STGCN  --routine gatherCorrectPrediction --dataset hdm05 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth
 
 
 ###attack models on hdm05 using SMART
+##attack the normally trained
 python main.py --routine attack --attackType ab --dataset hdm05 -classifier 3layerMLP --epochs 1000 --batchSize 64 --trainedModelFile minValLossModel.pth --trainFile adClassTrain.npz --dataPath ../results/ -retPath ../results/ -cn 65
 python main.py --routine attack --attackType ab --dataset hdm05 -classifier STGCN --epochs 1000 --batchSize 64 --trainedModelFile minValLossModel.pth --trainFile adClassTrain.npz --dataPath ../results/ -retPath ../results/ -cn 65
-python main.py --routine attack --attackType ab --dataset hdm05 -classifier ExtendedBayesian --baseClassifier STGCN -adTrainer EBMATrainer --epochs 1000 --batchSize 64 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth --trainFile bayesianAdClassTrain.npz --dataPath ../results/ -retPath ../results/ -cn 65
 
+
+##attack the ML-adversarial trained
 python main.py --routine attack --attackType ab --dataset hdm05 -classifier 3layerMLP -adTrainer EBMATrainer --epochs 1000 --batchSize 64 --trainedModelFile minValLossModel_adtrained.pth --trainFile adClassTrain_adtrained.npz --dataPath ../results/ -retPath ../results/ -cn 65
 python main.py --routine attack --attackType ab --dataset hdm05 -classifier STGCN -adTrainer EBMATrainer --epochs 1000 --batchSize 64 --trainedModelFile minValLossModel_adtrained.pth --trainFile adClassTrain_adtrained.npz --dataPath ../results/ -retPath ../results/ -cn 65
 
+##attack the PT-Bayesian-adversarial trained
+python main.py --routine attack --attackType ab --dataset hdm05 -classifier ExtendedBayesian --baseClassifier STGCN -adTrainer EBMATrainer --epochs 1000 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth --trainFile bayesianAdClassTrain.npz --dataPath ../results/ -retPath ../results/ -cn 65
+
 ###attack models on hdm05 using CIASA
+##attack the normally trained
 python main.py --routine attack -attacker CIASA --attackType ab --dataset hdm05 -classifier 3layerMLP --epochs 1000 --batchSize 32 --trainedModelFile minValLossModel.pth --trainFile adClassTrain.npz --dataPath ../results/ -retPath ../results/ -cn 65
 python main.py --routine attack -attacker CIASA --attackType ab --dataset hdm05 -classifier STGCN --epochs 1000 --batchSize 32 --trainedModelFile minValLossModel.pth --trainFile adClassTrain.npz --dataPath ../results/ -retPath ../results/ -cn 65
-python main.py --routine attack -attacker CIASA --attackType ab --dataset hdm05 -classifier ExtendedBayesian --baseClassifier STGCN -adTrainer EBMATrainer --epochs 1000 --batchSize 64 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth --trainFile bayesianAdClassTrain.npz --dataPath ../results/ -retPath ../results/ -cn 65
 
 
+##attack the ML-adversarial trained
 python main.py --routine attack -attacker CIASA --attackType ab --dataset hdm05 -classifier 3layerMLP -adTrainer EBMATrainer --epochs 1000 --batchSize 32 --trainedModelFile minValLossModel_adtrained.pth --trainFile adClassTrain_adtrained.npz --dataPath ../results/ -retPath ../results/ -cn 65
 python main.py --routine attack -attacker CIASA --attackType ab --dataset hdm05 -classifier STGCN -adTrainer EBMATrainer --epochs 1000 --batchSize 32 --trainedModelFile minValLossModel_adtrained.pth --trainFile adClassTrain_adtrained.npz --dataPath ../results/ -retPath ../results/ -cn 65
+
+##attack the PT-Bayesian-adversarial trained
+python main.py --routine attack -attacker CIASA --attackType ab --dataset hdm05 -classifier ExtendedBayesian --baseClassifier STGCN -adTrainer EBMATrainer --epochs 1000 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth --trainFile bayesianAdClassTrain.npz --dataPath ../results/ -retPath ../results/ -cn 65
+
+
 
 ########train&test classifiers on ntu60
 python main.py -classifier STGCN --routine train --dataset ntu60 --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 60
