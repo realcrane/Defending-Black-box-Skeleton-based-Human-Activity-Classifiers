@@ -1,15 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="scshwa@localhost:7000" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="scshwa@uol-pc-211083:22" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
-      <paths name="scshwa@localhost:6000 password">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/home/csunix/scshwa/remote2/scshwa/projects/AdversarialTraining " local="$PROJECT_DIR$" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="scshwa@localhost:7000">
+      <paths name="scshwa@uol-pc-211083:22">
         <serverdata>
           <mappings>
             <mapping deploy="/home/csunix/scshwa/remote/scshwa/projects/AdversarialTraining" local="$PROJECT_DIR$" />

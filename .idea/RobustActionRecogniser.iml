@@ -7,7 +7,7 @@
       <excludeFolder url="file://$MODULE_DIR$/external code" />
       <excludeFolder url="file://$MODULE_DIR$/code/runs" />
     </content>
-    <orderEntry type="jdk" jdkName="Remote Python 2.7.5 (sftp://scshwa@localhost:7000/usr/bin/python)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Remote Python 2.7.5 (sftp://scshwa@uol-pc-211083:22/usr/bin/python)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
