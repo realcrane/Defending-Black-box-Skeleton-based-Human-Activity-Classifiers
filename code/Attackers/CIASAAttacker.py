@@ -27,7 +27,7 @@ class CIASAAttacker(ActionAttacker):
         self.refBoneLengths = []
         self.optimizer = ''
         self.classifier = loadClassifier(args)
-        self.retFolder = self.args.retPath + self.args.classifier + '/' + self.name + '/'
+        self.retFolder = self.args.retPath + self.args.dataset + '/' + self.args.classifier + '/' + self.name + '/'
         if not os.path.exists(self.retFolder):
             os.mkdir(self.retFolder)
 

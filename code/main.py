@@ -11,7 +11,7 @@ from AdversarialTrainers.loadATrainers import loadATrainer
 def parameteSettingForOptimizers(ap):
 
     ap.add_argument("-lr", "--learningRate", type=float, required=False, help="to specify an adversarial attacker",
-                    default=1e-3)
+                    default=1e-1)
 
 def parameteSettingForAttackers(ap):
 
@@ -80,10 +80,10 @@ def parameteSettingForClassifiers(ap):
                     help="the pre-trained appended model weight file, under --retPath", default='')
 
     ap.add_argument("-ep", "--epochs", type=int, required=False, help="to specify the number of epochs for training",
-                    default=200)
+                    default=110)
     ap.add_argument("-cn", "--classNum", type=int, required=True, help="to specify the number of classes")
     ap.add_argument("-bs", "--batchSize", type=int, required=False, help="to specify the number of classes",
-                    default=32)
+                    default=64)
     ap.add_argument("-adTrainFile", "--adTrainFile", type=str, required=False,
                     help="the file name of the correctly classified data samples for adversarial attack",
                     default='adClassTrain.npz')

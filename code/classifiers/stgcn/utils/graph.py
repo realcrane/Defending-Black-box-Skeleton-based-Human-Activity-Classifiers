@@ -52,26 +52,26 @@ class Graph():
             self.num_node = 25
             self_link = [(i, i) for i in range(self.num_node)]
 
-            #our skeleton structure
-            neighbor_1base = [(10, 0), (0, 1), (1, 2), (2, 3), (3, 4),
-                      (10, 5), (5, 6), (6, 7), (7, 8), (8, 9),
-                      (10, 11), (11, 12), (12, 13), (13, 14),
-                      (13, 15), (15, 16), (16, 17), (17, 18), (18, 19),
-                      (13, 20), (20, 21), (21, 22), (22, 23), (23, 24)]
-            neighbor_link = [(i, j) for (i, j) in neighbor_1base]
-            self.edge = self_link + neighbor_link
-            self.center = 10
-
-            # commented out the original skeleton topology as we define our own
-            # neighbor_1base = [(1, 2), (2, 21), (3, 21), (4, 3), (5, 21),
-            #                   (6, 5), (7, 6), (8, 7), (9, 21), (10, 9),
-            #                   (11, 10), (12, 11), (13, 1), (14, 13), (15, 14),
-            #                   (16, 15), (17, 1), (18, 17), (19, 18), (20, 19),
-            #                   (22, 23), (23, 8), (24, 25), (25, 12)]
-            #neighbor_link = [(i - 1, j - 1) for (i, j) in neighbor_1base]
-
+            # #our skeleton structure, ordered as in the stgcn, torso, lArm, rArm, lLeg and rLeg
+            # neighbor_1base = [(10, 11), (11, 12), (12, 13), (13, 14),
+            #                   (13, 15), (15, 16), (16, 17), (17, 18), (18, 19),
+            #                   (13, 20), (20, 21), (21, 22), (22, 23), (23, 24),
+            #                   (10, 0), (0, 1), (1, 2), (2, 3), (3, 4),
+            #                   (10, 5), (5, 6), (6, 7), (7, 8), (8, 9)]
+            # neighbor_link = [(i, j) for (i, j) in neighbor_1base]
             # self.edge = self_link + neighbor_link
-            # self.center = 21 - 1
+            # self.center = 12
+
+
+            neighbor_1base = [(1, 2), (2, 21), (3, 21), (4, 3), (5, 21),
+                              (6, 5), (7, 6), (8, 7), (9, 21), (10, 9),
+                              (11, 10), (12, 11), (13, 1), (14, 13), (15, 14),
+                              (16, 15), (17, 1), (18, 17), (19, 18), (20, 19),
+                              (22, 23), (23, 8), (24, 25), (25, 12)]
+            neighbor_link = [(i - 1, j - 1) for (i, j) in neighbor_1base]
+
+            self.edge = self_link + neighbor_link
+            self.center = 21 - 1
         elif layout == 'ntu_edge':
             self.num_node = 24
             self_link = [(i, i) for i in range(self.num_node)]

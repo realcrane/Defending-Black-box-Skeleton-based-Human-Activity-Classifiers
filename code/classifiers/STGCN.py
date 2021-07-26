@@ -10,7 +10,7 @@ from torch import nn
 import torch.nn.functional as F
 from shared.helpers import *
 from torch.utils.tensorboard import SummaryWriter
-
+import time
 from datasets.dataloaders import *
 from Configuration import *
 
@@ -19,7 +19,7 @@ class STGCN(ActionClassifier):
         super().__init__(args)
         self.trainloader, self.validationloader, self.testloader = createDataLoader(args)
         self.createModel()
-
+        self.steps = [40, 80]
     def createModel(self):
         #this is a wrapper of the original STGCN code, with minor modification on the input format
         class Classifier(nn.Module):
@@ -50,6 +50,7 @@ class STGCN(ActionClassifier):
                 num_class = args.classNum
                 edge_importance_weighting = args.args.edge_importance_weighting
                 # load graph
+
                 self.graph = Graph(args.args.graph_layout, args.args.graph_strategy)
                 A = torch.tensor(self.graph.A, dtype=torch.float32, requires_grad=False)
                 self.register_buffer('A', A)
@@ -62,16 +63,16 @@ class STGCN(ActionClassifier):
 
 
                 self.st_gcn_networks = nn.ModuleList((
-                    st_gcn(in_channels, 64, kernel_size, 1, residual=False),
-                    st_gcn(64, 64, kernel_size, 1),
-                    st_gcn(64, 64, kernel_size, 1),
-                    st_gcn(64, 64, kernel_size, 1),
-                    st_gcn(64, 128, kernel_size, 2),
-                    st_gcn(128, 128, kernel_size, 1),
-                    st_gcn(128, 128, kernel_size, 1),
-                    st_gcn(128, 256, kernel_size, 2),
-                    st_gcn(256, 256, kernel_size, 1),
-                    st_gcn(256, 256, kernel_size, 1),
+                    st_gcn(in_channels, 64, kernel_size, 1, residual=False, dropout = args.args.dropout),
+                    st_gcn(64, 64, kernel_size, 1, dropout = args.args.dropout),
+                    st_gcn(64, 64, kernel_size, 1, dropout = args.args.dropout),
+                    st_gcn(64, 64, kernel_size, 1, dropout = args.args.dropout),
+                    st_gcn(64, 128, kernel_size, 2, dropout = args.args.dropout),
+                    st_gcn(128, 128, kernel_size, 1, dropout = args.args.dropout),
+                    st_gcn(128, 128, kernel_size, 1, dropout = args.args.dropout),
+                    st_gcn(128, 256, kernel_size, 2, dropout = args.args.dropout),
+                    st_gcn(256, 256, kernel_size, 1, dropout = args.args.dropout),
+                    st_gcn(256, 256, kernel_size, 1, dropout = args.args.dropout),
                 ))
 
                 # initialize parameters for edge importance weighting
@@ -87,12 +88,14 @@ class STGCN(ActionClassifier):
                 self.fcn = nn.Conv2d(256, num_class, kernel_size=1)
 
             def forward(self, x):
-                #our data is [batch_size, num_of_frames, dofs]
-                #so we first convert our data into the format STGCN uses
+                # #our data is [batch_size, num_of_frames, dofs]
+                # #so we first convert our data into the format STGCN uses
+                # #Input: :math:`(N, in_channels, T_{in}, V_{in}, M_{in})`
+                # x = x.reshape((x.shape[0], x.shape[1], -1, 3, 1))
+                # # x = x.permute(0, 2, 1)
+                # # x = x.reshape((x.shape[0], 3, -1, x.shape[2], 1))
+                # x = x.permute(0, 3, 1, 2, 4)
 
-                x = x.permute(0, 2, 1)
-                x = x.reshape((x.shape[0], 3, -1, x.shape[2], 1))
-                x = x.permute(0, 1, 3, 2, 4)
                 # data normalization
                 N, C, T, V, M = x.size()
                 x = x.permute(0, 4, 3, 1, 2).contiguous()
@@ -117,12 +120,14 @@ class STGCN(ActionClassifier):
                 return x
 
             def extract_feature(self, x):
-                #our data is [batch_size, num_of_frames, dofs]
-                #so we first convert our data into the format STGCN uses
+                # #our data is [batch_size, num_of_frames, dofs]
+                # #so we first convert our data into the format STGCN uses
+                #
+                # x = x.reshape((x.shape[0], x.shape[1], -1, 3, 1))
+                # # x = x.permute(0, 2, 1)
+                # # x = x.reshape((x.shape[0], 3, -1, x.shape[2], 1))
+                # x = x.permute(0, 3, 1, 2, 4)
 
-                x = x.permute(0, 2, 1)
-                x = x.reshape((x.shape[0], 3, -1, x.shape[2], 1))
-                x = x.permute(0, 1, 3, 2, 4)
                 # data normalization
                 N, C, T, V, M = x.size()
                 x = x.permute(0, 4, 3, 1, 2).contiguous()
@@ -132,7 +137,7 @@ class STGCN(ActionClassifier):
                 x = x.permute(0, 1, 3, 4, 2).contiguous()
                 x = x.view(N * M, C, T, V)
 
-                # forwad
+                # forward
                 for gcn, importance in zip(self.st_gcn_networks, self.edge_importance):
                     x, _ = gcn(x, self.A * importance)
 
@@ -174,9 +179,23 @@ class STGCN(ActionClassifier):
         self.model.to(device)
     def configureOptimiser(self):
 
-        self.optimiser = torch.optim.Adam(self.model.parameters(), lr=self.args.args.learningRate, betas=(0.9, 0.999),
-                                          eps=1e-08, weight_decay=0.0001, amsgrad=False)
+        #self.optimiser = torch.optim.Adam(self.model.parameters(), lr=self.args.args.learningRate, weight_decay=0.0001)
+        self.optimiser = torch.optim.SGD(
+                self.model.parameters(),
+                lr=self.args.args.learningRate,
+                momentum=0.9,
+                nesterov=True,
+                weight_decay=0.0001)
 
+    def adjustLearningRate(self, epoch):
+        if self.steps:
+            lr = self.args.args.learningRate * (
+                0.1**np.sum(epoch >= np.array(self.steps)))
+            for param_group in self.optimiser.param_groups:
+                param_group['lr'] = lr
+            self.lr = lr
+        else:
+            self.lr = self.args.args.learningRate
     def classificationLoss(self):
 
         self.classLoss = torch.nn.CrossEntropyLoss()
@@ -197,10 +216,12 @@ class STGCN(ActionClassifier):
         bestValLoss = np.infty
 
         logger = SummaryWriter()
-
+        startTime = time.time()
+        valTime = 0
         for ep in range(self.args.epochs):
             epLoss = 0
             batchNum = 0
+            self.adjustLearningRate(ep)
             #print(f"epoch: {ep} GPU memory allocated: {torch.cuda.memory_allocated(1)}")
             for batch, (X, y) in enumerate(self.trainloader):
                 batchNum += 1
@@ -214,7 +235,7 @@ class STGCN(ActionClassifier):
                 loss.backward()
                 self.optimiser.step()
 
-                if batch % 50 == 0:
+                if batch % 100 == 0:
                     loss, current = loss.item(), batch * len(X)
                     print(f"epoch: {ep}  loss: {loss:>7f} [{current:>5d}/{size:>5d}]")
 
@@ -226,28 +247,32 @@ class STGCN(ActionClassifier):
             if epLoss < bestLoss:
                 if not os.path.exists(self.retFolder):
                     os.makedirs(self.retFolder)
-                print(f"epoch: {ep} per epoch average training loss improves from: {bestLoss} to {epLoss}")
+                print(f"epoch: {ep} (time elapsed: {(time.time() - startTime)/3600 - valTime} hours) per epoch average training loss improves from: {bestLoss} to {epLoss}")
                 torch.save(self.model.state_dict(), self.retFolder + 'minLossModel.pth')
                 bestLoss = epLoss
 
-            # run validation and save a model if the best validation loss so far has been achieved.
-            valLoss = 0
-            vbatch = 0
-            self.model.eval()
-            for v, (tx, ty) in enumerate(self.testloader):
-                pred = self.model(tx)
-                loss = self.classLoss(pred, ty)
-                valLoss += loss.detach().item()
-                vbatch += 1
-                #print(f"epoch: {ep} GPU memory allocated after one batch validation: {torch.cuda.memory_allocated(1)}")
-            valLoss /= vbatch
-            logger.add_scalar('Loss/validation', valLoss, ep)
-            self.model.train()
-            if valLoss < bestValLoss:
-                print(f"epoch: {ep} per epoch average validation loss improves from: {bestValLoss} to {valLoss}")
-                torch.save(self.model.state_dict(), self.retFolder + 'minValLossModel.pth')
-                bestValLoss = valLoss
-            #print(f"epoch: {ep} GPU memory allocated after one epoch validation: {torch.cuda.memory_allocated(1)}")
+            if ep % 1 == 0:
+                # run validation and save a model if the best validation loss so far has been achieved.
+                valStartTime = time.time()
+                valLoss = 0
+                vbatch = 0
+                self.model.eval()
+                for v, (tx, ty) in enumerate(self.testloader):
+                    pred = self.model(tx)
+                    loss = self.classLoss(pred, ty)
+                    valLoss += loss.detach().item()
+                    vbatch += 1
+                    #print(f"epoch: {ep} GPU memory allocated after one batch validation: {torch.cuda.memory_allocated(1)}")
+                valLoss /= vbatch
+                logger.add_scalar('Loss/validation', valLoss, ep)
+                self.model.train()
+                if valLoss < bestValLoss:
+                    print(f"epoch: {ep} per epoch average validation loss improves from: {bestValLoss} to {valLoss}")
+                    torch.save(self.model.state_dict(), self.retFolder + 'minValLossModel.pth')
+                    bestValLoss = valLoss
+                valEndTime = time.time()
+                valTime += (valEndTime - valStartTime)/3600
+                #print(f"epoch: {ep} GPU memory allocated after one epoch validation: {torch.cuda.memory_allocated(1)}")
 
     #this function tests the trained classifier and also save correctly classified samples in 'adClassTrain.npz' for
     #further adversarial attack
