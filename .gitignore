@@ -114,3 +114,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+data/ntu60/xsub/val_label.pkl
+*.npz
+*.npy
+*.pkl
+data/ntu60/combineData.py
