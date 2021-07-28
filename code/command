@@ -3,6 +3,8 @@ CUDA_VISIBLE_DEVICES=0,1
 cd remote/scshwa/projects/AdversarialTraining/code/
 rm ./minLossModel_adtrained_* ./minValLossModel_adtrained_clf* ./minValLossModel_adtrained_-* ./minValLossModel_adtrained_0*rm ./minLossModel_adtrained_* ./minValLossModel_adtrained_clf* ./minValLossModel_adtrained_-* ./minValLossModel_adtrained_0*
 
+
+############hdm05
 ########train&test classifiers on hdm05
 python main.py -classifier 3layerMLP --routine train --dataset hdm05 --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65
 python main.py -classifier STGCN --routine train --dataset hdm05 --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65 --trainedModelFile minValLossModel.pth
@@ -56,7 +58,7 @@ python main.py --routine attack -attacker CIASA --attackType ab --dataset hdm05 
 python main.py --routine attack -attacker CIASA --attackType ab --dataset hdm05 -classifier ExtendedBayesian --baseClassifier STGCN -adTrainer EBMATrainer --epochs 1000 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth --trainFile bayesianAdClassTrain.npz --dataPath ../results/ -retPath ../results/ -cn 65
 
 
-
+############NTU60
 ########train&test classifiers on ntu60
 python main.py -classifier STGCN --routine train --dataset ntu60 --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 60
 python main.py -classifier STGCN --routine test --dataset ntu60 --testFile classTest.npz --trainedModelFile minValLossModel.pth --dataPath ../data/ -retPath ../results/ -cn 60

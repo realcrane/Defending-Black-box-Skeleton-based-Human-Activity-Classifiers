@@ -83,7 +83,7 @@ def parameteSettingForClassifiers(ap):
                     default=110)
     ap.add_argument("-cn", "--classNum", type=int, required=True, help="to specify the number of classes")
     ap.add_argument("-bs", "--batchSize", type=int, required=False, help="to specify the number of classes",
-                    default=64)
+                    default=32)
     ap.add_argument("-adTrainFile", "--adTrainFile", type=str, required=False,
                     help="the file name of the correctly classified data samples for adversarial attack",
                     default='adClassTrain.npz')

@@ -19,7 +19,7 @@ class STGCN(ActionClassifier):
         super().__init__(args)
         self.trainloader, self.validationloader, self.testloader = createDataLoader(args)
         self.createModel()
-        self.steps = [40, 80]
+        self.steps = [10, 50]
     def createModel(self):
         #this is a wrapper of the original STGCN code, with minor modification on the input format
         class Classifier(nn.Module):
@@ -63,7 +63,7 @@ class STGCN(ActionClassifier):
 
 
                 self.st_gcn_networks = nn.ModuleList((
-                    st_gcn(in_channels, 64, kernel_size, 1, residual=False, dropout = args.args.dropout),
+                    st_gcn(in_channels, 64, kernel_size, 1, residual=False),
                     st_gcn(64, 64, kernel_size, 1, dropout = args.args.dropout),
                     st_gcn(64, 64, kernel_size, 1, dropout = args.args.dropout),
                     st_gcn(64, 64, kernel_size, 1, dropout = args.args.dropout),
@@ -247,10 +247,10 @@ class STGCN(ActionClassifier):
             if epLoss < bestLoss:
                 if not os.path.exists(self.retFolder):
                     os.makedirs(self.retFolder)
-                print(f"epoch: {ep} (time elapsed: {(time.time() - startTime)/3600 - valTime} hours) per epoch average training loss improves from: {bestLoss} to {epLoss}")
+                print(f"epoch: {ep} per epoch average training loss improves from: {bestLoss} to {epLoss}")
                 torch.save(self.model.state_dict(), self.retFolder + 'minLossModel.pth')
                 bestLoss = epLoss
-
+            print(f"epoch: {ep} time elapsed: {(time.time() - startTime) / 3600 - valTime} hours")
             if ep % 1 == 0:
                 # run validation and save a model if the best validation loss so far has been achieved.
                 valStartTime = time.time()

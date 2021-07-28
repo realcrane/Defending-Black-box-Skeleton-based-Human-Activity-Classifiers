@@ -22,12 +22,19 @@ class CDataset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
         self.classNum = args.classNum
+        self.args = args
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx):
         data = self.data[idx]
+        ##data format conversion for different classifiers
+        if self.args.classifier == 'STGCN':
+            if self.args.dataset == 'hdm05':
+                x = data.reshape((data.shape[0], -1, 3, 1))
+                data = x.permute(2, 0, 1, 3)
+
         label = self.labels[idx]
         return data.to(device), label.to(device)
 
@@ -40,15 +47,10 @@ class CDataset(Dataset):
                         13, 15, 16, 17, 18,
                         13, 20, 21, 22, 23])
 
-    # neighbor_1base = [(10, 0), (0, 1), (1, 2), (2, 3), (3, 4),
-    #                   (10, 5), (5, 6), (6, 7), (7, 8), (8, 9),
-    #                   (10, 10), (10, 11), (11, 12), (12, 13), (13, 14),
-    #                   (13, 15), (15, 16), (16, 17), (17, 18), (18, 19),
-    #                   (13, 20), (20, 21), (21, 22), (22, 23), (23, 24)]
 
 class NTUDataset(CDataset):
     def __init__(self, args, transform=None, target_transform=None):
-        super.__init__(args, transform, target_transform)
+        super().__init__(args, transform, target_transform)
     def __len__(self):
         return len(self.labels)
 
@@ -58,16 +60,9 @@ class NTUDataset(CDataset):
         return data.to(device), label.to(device)
 
     # this is the topology of the skeleton, assuming the joints are stored in an array and the indices below
-    # indicate their parent node indices. E.g. the parent of the first node is 10 and node[10] is the root node
-    # of the skeleton
-    parents = np.array([10, 0, 1, 2, 3,
-                        10, 5, 6, 7, 8,
-                        10, 10, 11, 12, 13,
-                        13, 15, 16, 17, 18,
-                        13, 20, 21, 22, 23])
-
-    # neighbor_1base = [(10, 0), (0, 1), (1, 2), (2, 3), (3, 4),
-    #                   (10, 5), (5, 6), (6, 7), (7, 8), (8, 9),
-    #                   (10, 10), (10, 11), (11, 12), (12, 13), (13, 14),
-    #                   (13, 15), (15, 16), (16, 17), (17, 18), (18, 19),
-    #                   (13, 20), (20, 21), (21, 22), (22, 23), (23, 24)]
+    # indicate their parent node indices.
+    parents = np.array([1, 1, 21, 3, 21,
+                        5, 6, 7, 21, 9,
+                        10, 11, 1, 13, 14,
+                        15, 1, 17, 18, 19,
+                        2, 23, 8, 25, 12]) - 1

@@ -6,8 +6,8 @@ import torch
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import os
-from optimisers.optimisers import SGAdaHMC
-import copy
+import time
+
 class EBMATrainer(AdversarialTrainer):
     def __init__(self, args):
         super().__init__(args)
@@ -26,6 +26,7 @@ class EBMATrainer(AdversarialTrainer):
             os.makedirs(self.retFolder)
 
     def modelEval(self, X, modelNo = -1):
+
         if self.args.bayesianTraining:
             pred = self.classifier.modelEval(X, modelNo)
         else:
@@ -109,9 +110,25 @@ class EBMATrainer(AdversarialTrainer):
         return loss_drv + boneLengthsLoss
 
     def log_xTilde_x(self, x, xTilde, y, beta, refBoneLengths, drv_order=3, modelNo = -1):
-        loss = torch.nn.CrossEntropyLoss()(self.modelEval(xTilde, modelNo), y)
         loss_motion = self.xXTildeLoss(x, xTilde, refBoneLengths, drv_order)
-        return loss + beta * loss_motion
+
+        # There are three possible formulations
+        # 1. logp(xTilde | x, y)
+        # logits = self.modelEval(xTilde, modelNo)
+        # prob = 0
+        # for i in range(len(y)):
+        #     prob += logits[i, y[i]]
+        # prob /= len(y)
+        # return -prob + beta * loss_motion
+
+        # 2. \sum_y logp(xTilde | x)
+        #prob = torch.logsumexp(self.modelEval(xTilde), 0).sum()
+        #return -prob + beta * loss_motion
+
+        #use cross-entropy
+        loss = torch.nn.CrossEntropyLoss()(self.modelEval(xTilde, modelNo), y)
+
+        return -(loss + beta * loss_motion)
 
     def sampleXTilde(self, x, y, refBoneLengths):
         if not self.args.bayesianTraining:
@@ -155,6 +172,8 @@ class EBMATrainer(AdversarialTrainer):
                 loss.backward()
                 self.classifier.optimiser.step()
 
+        startTime = time.time()
+        valTime = 0
         for ep in range(self.args.epochs):
             epLoss = 0
             epClfLoss = 0
@@ -212,13 +231,15 @@ class EBMATrainer(AdversarialTrainer):
                 # torch.save(self.classifier.model.state_dict(), modelFile)
                 bestLoss = epLoss
 
+
             if epClfLoss < bestClfLoss:
                 print(f"epoch: {ep} per epoch average training clf loss improves from: {bestClfLoss} to {epClfLoss}")
                 # modelFile = self.retFolder + '/minLossModel_adtrained.pth'
                 # torch.save(self.classifier.model.state_dict(), modelFile)
                 bestClfLoss = epClfLoss
-
+            print(f"epoch: {ep} time elapsed: {(time.time() - startTime) / 3600 - valTime} hours")
             # run validation and save a model if the best validation loss so far has been achieved.
+            valStartTime = time.time()
             valLoss = 0
             valClfLoss = 0
             vbatch = 0
@@ -228,7 +249,7 @@ class EBMATrainer(AdversarialTrainer):
 
                 # sample x and compute logP(X)
                 ySamples = torch.randint(0, self.args.classNum, (self.args.batchSize,))
-                XSamples = self.sampleX(ySamples)
+                XSamples = self.sampleX()
 
                 logPX = self.modelEval(tx).mean()
                 logPXSamples = self.modelEval(XSamples).mean()
@@ -267,7 +288,8 @@ class EBMATrainer(AdversarialTrainer):
                 modelFile = self.retFolder + '/minValLossModel_adtrained.pth'
                 torch.save(self.classifier.model.state_dict(), modelFile)
                 bestValClfLoss = valClfLoss
-
+            valEndTime = time.time()
+            valTime += (valEndTime - valStartTime) / 3600
         return
     def bayesianAdversarialTrain(self):
 

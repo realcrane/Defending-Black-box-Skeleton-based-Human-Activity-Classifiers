@@ -10,7 +10,10 @@ def createDataLoader(args):
     testloader = ''
     if args.dataset == 'hdm05' or args.dataset == 'ntu60':
         if args.routine == 'train' or args.routine == 'adTrain' or args.routine == 'bayesianTrain':
-            traindataset = CDataset(args)
+            if args.dataset == 'ntu60':
+                traindataset = NTUDataset(args)
+            else:
+                traindataset = CDataset(args)
 
             validation_split = .2
             random_seed = 42
