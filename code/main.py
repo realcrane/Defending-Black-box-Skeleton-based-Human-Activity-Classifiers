@@ -32,7 +32,7 @@ def parameteSettingForAttackers(ap):
     ap.add_argument("-blw", "--boneLenWeight", type=float, required=False, help="to specify the weight for bone length loss",
                     default=0.7)
     ap.add_argument("-cp", "--clippingThreshold", type=float, required=False, help="set up the clipping threshold in update",
-                    default=0.003)
+                    default=0.005)
 
 
 def parameteSettingForAdTrainers(ap):

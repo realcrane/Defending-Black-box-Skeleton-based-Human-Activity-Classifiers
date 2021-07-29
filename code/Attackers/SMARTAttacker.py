@@ -38,6 +38,17 @@ class SmartAttacker(ActionAttacker):
                                       0.04, 0.04, 0.04, 0.04, 0.04,
                                       0.02, 0.02, 0.02, 0.02, 0.02,
                                       0.02, 0.02, 0.02, 0.02, 0.02]]]).to(device)
+
+    def boneLengths(self, data):
+
+        jpositions = K.reshape(data, (data.shape[0], data.shape[1], -1, 3))
+
+        boneVecs = jpositions - jpositions[:, :, self.classifier.trainloader.dataset.parents, :] + 1e-8
+
+        boneLengths = torch.sqrt(torch.sum(torch.square(boneVecs), axis=-1))
+
+        return boneLengths
+
     def boneLengthLoss (self, parentIds, adData, refBoneLengths):
 
         # convert the data into shape (batchid, frameNo, jointNo, jointCoordinates)
@@ -162,6 +173,17 @@ class SmartAttacker(ActionAttacker):
                 self.Adam = MyAdam()
             return self.Adam.get_updates(grads, input)
 
+
+    def reshapeData(self, x, toNative=True):
+        if self.classifier.args.args.dataset == 'ntu60':
+            #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
+            if toNative:
+                x = x.permute(0, 2, 3, 1, 4)
+                x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
+            else:
+                x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
+                x = x.permute(0, 3, 1, 2, 4)
+        return x
     def attack(self):
 
         self.classifier.setEval()
@@ -187,9 +209,8 @@ class SmartAttacker(ActionAttacker):
             minCl = np.PINF
             maxFoolRate = np.NINF
             batchTotalNum += 1
+
             for ep in range(self.classifier.args.epochs):
-
-
                 # compute the classification loss and gradient
                 pred = self.classifier.modelEval(adData)
                 predictedLabels = torch.argmax(pred, axis=1)
@@ -209,13 +230,24 @@ class SmartAttacker(ActionAttacker):
 
                 #computer the perceptual loss and gradient
 
-                # computer the restBoneLengths
-                positions = tx.reshape((tx.shape[0], tx.shape[1], -1, 3))
+                # the standard format is [batch_no, frames, DoFs]. If the tx.shape > 3, then we need reformat it
+                # if the data contains more than one person, then the loss is the summed losses of all people
+                if len(tx.shape) > 3:
+                    convertedData = self.reshapeData(tx)
+                    convertedAdData = self.reshapeData(adData)
+                    if len(convertedData.shape) > 3:
+                        percepLoss = 0
+                        ##we have more than one person, assuming the last index indicates the person
+                        for i in range(convertedData.shape[-1]):
+                            boneLengths = self.boneLengths(convertedData[:, :, :, i])
+                            percepLoss += self.perceptualLoss(convertedData[:, :, :, i], convertedAdData[:, :, :, i], boneLengths)
+                    else:
+                        boneLengths = self.boneLengths(convertedData)
+                        percepLoss = self.perceptualLoss(convertedData, convertedAdData, boneLengths)
+                else:
+                    boneLengths = self.boneLengths(tx)
+                    percepLoss = self.perceptualLoss(tx, adData, boneLengths)
 
-                boneVecs = positions - positions[:, :, self.classifier.trainloader.dataset.parents, :] + 1e-8
-
-                boneLengths = torch.sqrt(torch.sum(torch.square(boneVecs), axis=-1))
-                percepLoss = self.perceptualLoss(tx, adData, boneLengths)
                 adData.grad = None
                 percepLoss.backward(retain_graph=True)
                 pgs = adData.grad
@@ -263,17 +295,14 @@ class SmartAttacker(ActionAttacker):
                 if maxFoolRate == 100:
                     break;
 
-                cgsnorms = K.sqrt(K.sum(K.square(cgs), axis=-1))
+                cgsView = cgs.view(cgs.shape[0], -1)
+                pgsView = pgs.view(pgs.shape[0], -1)
 
-                cgsnorms = cgsnorms + 1e-18
+                cgsnorms = torch.norm(cgsView, dim=1) + 1e-18
+                pgsnorms = torch.norm(pgsView, dim=1) + 1e-18
 
-                cgs = cgs / cgsnorms[:, :, np.newaxis]
-
-                pgsnorms = K.sqrt(K.sum(K.square(pgs), axis=-1))
-
-                pgsnorms = pgsnorms + 1e-18
-
-                pgs = pgs / pgsnorms[:, :, np.newaxis]
+                cgsView /= cgsnorms[:, np.newaxis]
+                pgsView /= pgsnorms[:, np.newaxis]
 
                 temp = self.getUpdate(cgs * self.classWeight + pgs * (1 - self.classWeight), adData)
 
@@ -299,8 +328,8 @@ class SmartAttacker(ActionAttacker):
 
                     updates = temp[missedIndices] - adData[missedIndices]
                     for ci in range(updates.shape[0]):
-                        updateNorm = K.sqrt(K.sum(K.sum(K.square(updates[ci]))))
 
+                        updateNorm = torch.norm(updates[ci])
                         if updateNorm > self.updateClip:
                             updates[ci] = updates[ci] * self.updateClip / updateNorm
 
