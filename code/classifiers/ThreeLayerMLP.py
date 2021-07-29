@@ -15,7 +15,7 @@ import pdb
 class ThreeLayerMLP(ActionClassifier):
     def __init__(self, args):
         super().__init__(args)
-        self.trainloader, self.validationloader, self.testloader = createDataLoader(args)
+        self.trainloader, self.testloader = createDataLoader(args)
         self.createModel()
 
     def createModel(self):
@@ -117,7 +117,7 @@ class ThreeLayerMLP(ActionClassifier):
             valLoss = 0
             vbatch = 0
             self.model.eval()
-            for v, (tx, ty) in enumerate(self.validationloader):
+            for v, (tx, ty) in enumerate(self.testloader):
                 pred = self.model(tx)
                 valLoss += self.classLoss(pred, ty)
                 valLoss += loss.detach().item()

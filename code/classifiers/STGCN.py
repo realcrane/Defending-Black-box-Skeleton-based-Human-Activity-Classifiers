@@ -1,5 +1,4 @@
 import pdb
-
 from classifiers.ActionClassifier import ActionClassifier
 from classifiers.stgcn.st_gcn import st_gcn
 from classifiers.stgcn.utils.graph import Graph
@@ -17,7 +16,7 @@ from Configuration import *
 class STGCN(ActionClassifier):
     def __init__(self, args):
         super().__init__(args)
-        self.trainloader, self.validationloader, self.testloader = createDataLoader(args)
+        self.trainloader, self.testloader = createDataLoader(args)
         self.createModel()
         self.steps = [10, 50]
     def createModel(self):
@@ -213,11 +212,12 @@ class STGCN(ActionClassifier):
         size = len(self.trainloader.dataset)
 
         bestLoss = np.infty
-        bestValLoss = np.infty
+        bestValAcc = 0
 
         logger = SummaryWriter()
         startTime = time.time()
         valTime = 0
+        results = np.empty(len(self.testloader.dataset.rlabels))
         for ep in range(self.args.epochs):
             epLoss = 0
             batchNum = 0
@@ -229,12 +229,13 @@ class STGCN(ActionClassifier):
                 pred = self.model(X)
                 loss = self.classLoss(pred, y)
 
-                epLoss += loss.detach().item()
+
                 # Backpropagation
                 self.optimiser.zero_grad()
                 loss.backward()
                 self.optimiser.step()
 
+                epLoss += loss.detach().item()
                 if batch % 100 == 0:
                     loss, current = loss.item(), batch * len(X)
                     print(f"epoch: {ep}  loss: {loss:>7f} [{current:>5d}/{size:>5d}]")
@@ -254,22 +255,22 @@ class STGCN(ActionClassifier):
             if ep % 1 == 0:
                 # run validation and save a model if the best validation loss so far has been achieved.
                 valStartTime = time.time()
-                valLoss = 0
-                vbatch = 0
+                misclassified = 0
                 self.model.eval()
                 for v, (tx, ty) in enumerate(self.testloader):
-                    pred = self.model(tx)
-                    loss = self.classLoss(pred, ty)
-                    valLoss += loss.detach().item()
-                    vbatch += 1
+                    pred = torch.argmax(self.model(tx), dim=1)
+                    results[v * self.args.batchSize:(v + 1) * self.args.batchSize] = pred.cpu()
+                    diff = (pred - ty) != 0
+                    misclassified += torch.sum(diff)
+
                     #print(f"epoch: {ep} GPU memory allocated after one batch validation: {torch.cuda.memory_allocated(1)}")
-                valLoss /= vbatch
-                logger.add_scalar('Loss/validation', valLoss, ep)
+                acc = 1 - misclassified / len(self.testloader.dataset)
+                logger.add_scalar('Loss/testing accuracy', acc, ep)
                 self.model.train()
-                if valLoss < bestValLoss:
-                    print(f"epoch: {ep} per epoch average validation loss improves from: {bestValLoss} to {valLoss}")
+                if acc > bestValAcc:
+                    print(f"epoch: {ep} per epoch average validation accuracy improves from: {bestValAcc} to {acc}")
                     torch.save(self.model.state_dict(), self.retFolder + 'minValLossModel.pth')
-                    bestValLoss = valLoss
+                    bestValAcc = acc
                 valEndTime = time.time()
                 valTime += (valEndTime - valStartTime)/3600
                 #print(f"epoch: {ep} GPU memory allocated after one epoch validation: {torch.cuda.memory_allocated(1)}")
@@ -277,6 +278,7 @@ class STGCN(ActionClassifier):
     #this function tests the trained classifier and also save correctly classified samples in 'adClassTrain.npz' for
     #further adversarial attack
     def test(self):
+        self.model.eval()
         if len(self.args.trainedModelFile) == 0 or self.testloader == '':
             print('no pre-trained model to load')
             return
@@ -299,12 +301,9 @@ class STGCN(ActionClassifier):
     # this function is to collected all the testing samples that can be correctly collected
     # by the pre-trained classifier, to make a dataset for adversarial attack
     def collectCorrectPredictions(self):
-        if len(self.args.trainedModelFile) == 0 or self.testloader == '':
-            print('no pre-trained model to load')
-            return
+        self.model.eval()
 
-
-        # collect data from the training data
+        # collect data from the test data
         misclassified = 0
         results = np.empty(len(self.testloader.dataset.rlabels))
         for v, (tx, ty) in enumerate(self.testloader):
