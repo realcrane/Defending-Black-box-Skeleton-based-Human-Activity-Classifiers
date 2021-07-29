@@ -118,3 +118,8 @@ data/ntu60/xsub/val_label.pkl
 *.npy
 *.pkl
 data/ntu60/combineData.py
+experiment design.docx
+results/~$results.xlsx
+~WRL0550.tmp
+*.tmp
+*.docx
