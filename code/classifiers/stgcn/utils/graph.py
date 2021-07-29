@@ -48,6 +48,20 @@ class Graph():
                              (0, 1), (15, 0), (14, 0), (17, 15), (16, 14)]
             self.edge = self_link + neighbor_link
             self.center = 1
+        elif layout == 'hdm05':
+            self.num_node = 25
+            self_link = [(i, i) for i in range(self.num_node)]
+
+            #our skeleton structure, ordered as in the stgcn, torso, lArm, rArm, lLeg and rLeg
+            neighbor_1base = [(10, 11), (11, 12), (12, 13), (13, 14),
+                              (13, 15), (15, 16), (16, 17), (17, 18), (18, 19),
+                              (13, 20), (20, 21), (21, 22), (22, 23), (23, 24),
+                              (10, 0), (0, 1), (1, 2), (2, 3), (3, 4),
+                              (10, 5), (5, 6), (6, 7), (7, 8), (8, 9)]
+            neighbor_link = [(i, j) for (i, j) in neighbor_1base]
+            self.edge = self_link + neighbor_link
+            self.center = 12
+
         elif layout == 'ntu-rgb+d':
             self.num_node = 25
             self_link = [(i, i) for i in range(self.num_node)]
