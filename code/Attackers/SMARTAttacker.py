@@ -175,7 +175,7 @@ class SmartAttacker(ActionAttacker):
 
 
     def reshapeData(self, x, toNative=True):
-        if self.classifier.args.args.dataset == 'ntu60':
+        if self.classifier.args.args.dataset == 'ntu60' or self.classifier.args.args.dataset == 'ntu120':
             #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
             if toNative:
                 x = x.permute(0, 2, 3, 1, 4)

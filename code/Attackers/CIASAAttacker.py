@@ -34,9 +34,15 @@ class CIASAAttacker(ActionAttacker):
         self.discriminator = ''
         self.createDiscriminator()
         self.discriminator.to(device)
-        self.featureBuffer = torch.zeros([self.args.batchSize, self.classifier.trainloader.dataset.data.shape[1],
-                                          len(self.classifier.trainloader.dataset.parents),
-                                          len(self.classifier.trainloader.dataset.parents)])
+
+        if self.args.dataset == 'hdm05':
+            self.frameFeature = torch.zeros([self.args.batchSize * self.classifier.trainloader.dataset.data.shape[1],
+                                              len(self.classifier.trainloader.dataset.parents),
+                                              len(self.classifier.trainloader.dataset.parents)])
+        elif self.args.dataset == 'ntu60' or self.args.dataset == 'ntu120':
+            self.frameFeature = torch.zeros([self.args.batchSize * self.classifier.trainloader.dataset.data.shape[2],
+                                              len(self.classifier.trainloader.dataset.parents),
+                                              len(self.classifier.trainloader.dataset.parents)])
 
         # the joint weights are decided per joint, the spinal joints have higher weights.
         self.jointWeights = torch.Tensor([[[0.02, 0.02, 0.02, 0.02, 0.02,
@@ -46,17 +52,29 @@ class CIASAAttacker(ActionAttacker):
                                        0.02, 0.02, 0.02, 0.02, 0.02]]]).to(device)
     def createDiscriminator(self):
         class Discriminator(nn.Module):
-            def __init__(self, datashape):
+            def __init__(self, datashape, dataset='hdm05'):
                 super().__init__()
 
                 self.dataShape = datashape
-                self.convStack = nn.Sequential(
-                    nn.Conv2d(1, 32, kernel_size = 3),
-                    nn.Conv2d(32, 32, kernel_size = 3),
-                    nn.Flatten(),
-                    nn.Linear((self.dataShape[1]-4) * (self.dataShape[2]-4)*32, 1),
-                    nn.ReLU()
-                )
+                #currently the bone number is 25 in all the dataset we use
+                if dataset == 'hdm05':
+                    self.convStack = nn.Sequential(
+                        nn.Conv2d(1, 32, kernel_size = 3),
+                        nn.Conv2d(32, 32, kernel_size = 3),
+                        nn.Flatten(),
+                        nn.Linear(21 * 21 *32, 1),
+                        nn.ReLU()
+                    )
+                elif dataset == 'ntu60' or dataset == 'ntu120':
+                    self.convStack = nn.Sequential(
+                        nn.Conv2d(1, 32, kernel_size=3),
+                        nn.Conv2d(32, 32, kernel_size=3),
+                        nn.Flatten(),
+                        nn.Linear(21 * 21 *32, 1),
+                        nn.ReLU()
+                    )
+                else:
+                    self.convStack = ''
 
             def forward(self, x):
                 x = x[:, None, :, :]
@@ -65,32 +83,35 @@ class CIASAAttacker(ActionAttacker):
             def loss(self, x, labels):
                 return torch.square(self(x) - labels).sum()
 
-        self.discriminator = Discriminator(self.classifier.trainloader.dataset.data.shape)
+        self.discriminator = Discriminator(self.classifier.trainloader.dataset.data.shape, self.args.dataset)
         self.discriminator.optimiser = torch.optim.Adam(self.discriminator.parameters(), lr=0.001, betas=(0.9, 0.999),
                                           eps=1e-08, weight_decay=0, amsgrad=False)
 
     def perFrameFeature(self, frame, boneLengths):
-        featureMap = np.empty(len(frame)*len(frame))
 
-        transposed = np.transpose(frame)
+        featureMap = torch.zeros((len(frame), len(frame)))
+        transposed = torch.transpose(frame, 0, 1)
 
         for i in range(len(frame)):
-            featureMap[i, :] = frame[i] * transposed / boneLengths / boneLengths[i]
+            featureMap[i:i+1] = torch.matmul(frame[i:i+1], transposed) / boneLengths / boneLengths[i]
 
         return featureMap
 
     def updateFeatureMap(self, data):
 
+        buffer = self.frameFeature.detach()
         jpositions = K.reshape(data, (data.shape[0], data.shape[1], -1, 3))
 
 
-        boneVecs = jpositions - jpositions[:, :, self.classifier.trainloader.dataset.parents, :] + 1e-8
+        boneVecs = jpositions - jpositions[:, :, self.classifier.trainloader.dataset.parents, :]
 
-        boneLengths = torch.sqrt(torch.sum(torch.square(boneVecs), axis=-1))
+        boneLengths = torch.sqrt(torch.sum(torch.square(boneVecs + 1e-8), axis=-1))
 
-        for i in range(self.args.batchSize):
-            for j in range(data.shape[1]):
-                self.frameFeature[i, j, :, :] = self.perFrameFeature(data[i,j], boneLengths[i, j])
+        boneVecs = K.reshape(boneVecs, (-1, boneVecs.shape[2], boneVecs.shape[3]))
+        boneLengths = K.reshape(boneLengths, (-1, boneLengths.shape[2]))
+
+        for i in range(self.frameFeature.shape[0]):
+                buffer[i, :, :] = self.perFrameFeature(boneVecs[i], boneLengths[i])
 
     def boneLengths(self, data):
 
@@ -253,8 +274,20 @@ class CIASAAttacker(ActionAttacker):
 
         overallFoolRate = 0
         batchTotalNum = 0
-        zeros = torch.zeros(self.classifier.args.batchSize, dtype = torch.int64).to(device)
-        ones = torch.ones(self.classifier.args.batchSize, dtype = torch.int64).to(device)
+
+        if self.args.dataset == 'hdm05':
+            zeros = torch.zeros(self.classifier.args.batchSize*self.classifier.trainloader.dataset.data.shape[1], dtype = torch.int64).to(device)
+            ones = torch.ones(self.classifier.args.batchSize*self.classifier.trainloader.dataset.data.shape[1], dtype = torch.int64).to(device)
+        elif self.args.dataset == 'ntu60' or self.args.dataset == 'ntu120':
+            zeros = torch.zeros(self.classifier.args.batchSize * self.classifier.trainloader.dataset.data.shape[2],
+                                dtype=torch.int64).to(device)
+            ones = torch.ones(self.classifier.args.batchSize * self.classifier.trainloader.dataset.data.shape[2],
+                              dtype=torch.int64).to(device)
+        else:
+            zeros = ''
+            ones = ''
+            print ('unknown dataset for creating adversarial labels')
+            return
         for batchNo, (tx, ty) in enumerate(self.classifier.trainloader):
             adData = tx.clone()
             adData.requires_grad = True
@@ -297,10 +330,10 @@ class CIASAAttacker(ActionAttacker):
                             boneLengths = self.boneLengths(convertedData[:, :, :, i])
                             percepLoss += self.perceptualLoss(convertedData[:, :, :, i], convertedAdData[:, :, :, i], boneLengths)
                             self.updateFeatureMap(convertedAdData[:, :, :, i])
-                            GANLoss += self.discriminator.loss(self.frameFeature, zeros) \
-                                      + self.discriminator.loss(self.frameFeature, ones)
+                            GANLoss += self.discriminator.loss(self.frameFeature.to(device), zeros) \
+                                      + self.discriminator.loss(self.frameFeature.to(device), ones)
                             self.updateFeatureMap(convertedData[:, :, :, i])
-                            GANLoss += self.discriminator.loss(self.frameFeature, ones)
+                            GANLoss += self.discriminator.loss(self.frameFeature.to(device), ones)
                     else:
                         boneLengths = self.boneLengths(convertedData)
                         percepLoss = self.perceptualLoss(convertedData, convertedAdData, boneLengths)

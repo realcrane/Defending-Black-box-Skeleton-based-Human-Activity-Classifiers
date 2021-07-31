@@ -1,15 +1,15 @@
 % a matlab code snippet to render the target motions and attacked motions
 % in a video
 
-dataSet = 'hdm05';
+dataSet = 'ntu60';
 
-gpath = sprintf('../../results/%s/3layerMLP/', dataSet);
-batch = 'batch0_ab_clw_0.60_pl_l2_plw_0.40/';
-folder = 'AdExamples_maxFoolRate_batch0_AttackType_ab_clw_0.60_pl_l2_reCon_0.40_fr_100.00/';
+gpath = sprintf('../../results/%s/STGCN/SMART/', dataSet);
+batch = 'batch0_ab_clw_0.60_pl_l2_acc-bone_plw_0.40/';
+folder = 'AdExamples_maxFoolRate_batch0_AttackType_ab_clw_0.60_pl_l2_acc-bone_reCon_0.40_fr_96.88/';
 dataPath = sprintf('%s%s%s/', gpath, batch,folder);
 % dataPath = '../data/';
 
-classFileId = fopen(sprintf('../../data/%s/hdm05_classes.txt', dataSet));
+classFileId = fopen(sprintf('../../data/%s/classes.txt', dataSet));
 
 classes = textscan(classFileId, '%s');
 
@@ -31,27 +31,39 @@ end
 
 
 
-parentid = [11, 1, 2, 3, 4, ...
-            11, 6, 7, 8, 9, ...
-            0, 11, 12, 13, 14, ... 
-            14, 16, 17, 18, 19, ...
-            14, 21, 22, 23, 24];
+% parentid = [11, 1, 2, 3, 4, ...
+%             11, 6, 7, 8, 9, ...
+%             0, 11, 12, 13, 14, ... 
+%             14, 16, 17, 18, 19, ...
+%             14, 21, 22, 23, 24];
+
+%%ntu60
+% parentid = [1, 1, 21, 3, 21,...
+%             5, 6, 7, 21, 9, ...
+%             10, 11, 1, 13, 14, ...
+%             15, 1, 17, 18, 19, ...
+%             2, 8, 8, 12, 12];
+        
+parentid = [2 1 21 3 21 5 6 7 21 9 10 11 1 13 14 15 1 17 18 19 2 8 8 12 12];
 
 % motionIndices = [8];
 motionIndices = 1:size(fooledMotionIndices, 1);
 
-oriClipLength = 60;
+oriClipLength = 300;
 
 scalar = 20; %20 , only needed for nturgdb datasets
 
 margin = 10;
 
+ori_motions = permute(ori_motions, [1, 3, 2, 4, 5]);
+ad_motions = permute(ad_motions, [1, 3, 2, 4, 5]);
 
 for i = 1:size(motionIndices, 2)
 
     motionIndex = fooledMotionIndices(motionIndices(i));
 %     motionIndex = motionIndices(i);
-    temp = reshape(ori_motions(motionIndex, :, :), [oriClipLength, 75]);
+    %temp = reshape(ori_motions(motionIndex, :, :), [oriClipLength, 75]);
+    temp = reshape(ori_motions(motionIndex, :, :, :, 1), [oriClipLength, 75]);
     temp = temp * scalar;
     motion = reshape(temp', [], 25, oriClipLength);
     
@@ -86,7 +98,7 @@ for i = 1:size(motionIndices, 2)
     print('-djpeg', sprintf('%s%d%s', dataPath, motionIndex, '_ori.jpg'), '-r100');
 
 
-    temp = reshape(ad_motions(motionIndex, :, :), [oriClipLength, 75]);
+    temp = reshape(ad_motions(motionIndex, :, :, :, 1), [oriClipLength, 75]);
     temp = temp * scalar;
     ad_motion = reshape(temp', [], 25, oriClipLength);
 
