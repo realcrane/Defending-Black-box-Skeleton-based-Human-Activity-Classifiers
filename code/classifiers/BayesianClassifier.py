@@ -16,7 +16,7 @@ class ExtendedBayesianClassifier(ActionClassifier):
     def __init__(self, args):
         super().__init__(args)
         args.args.bayesianTraining = True
-        self.trainloader, self.validationloader, self.testloader = createDataLoader(args)
+        self.trainloader, self.testloader = createDataLoader(args)
         if args.args.baseClassifier == '3layerMLP':
             self.classifier = ThreeLayerMLP(args)
         elif args.args.baseClassifier == 'STGCN':

@@ -343,6 +343,7 @@ class EBMATrainer(AdversarialTrainer):
         bestValLoss = [np.infty for i in range(self.args.bayesianModelNum)]
         bestClfLoss = [np.infty for i in range(self.args.bayesianModelNum)]
         bestValClfLoss = [np.infty for i in range(self.args.bayesianModelNum)]
+        bestValClfAcc = [0 for i in range(self.args.bayesianModelNum)]
         logger = SummaryWriter()
 
         #burn-in for classifier
@@ -371,7 +372,7 @@ class EBMATrainer(AdversarialTrainer):
                     # sample x and compute logP(X)
                     #ySamples = torch.randint(0, self.args.classNum, (self.args.batchSize,))
 
-                    XSamples = self.sampleX(i)
+                    XSamples = self.sampleX(X, i)
 
                     logPX = self.modelEval(X, i).mean()
 
@@ -427,52 +428,57 @@ class EBMATrainer(AdversarialTrainer):
             valClfLoss = np.zeros(self.args.bayesianModelNum)
             self.classifier.setEval()
             for i in range(self.args.bayesianModelNum):
-                vbatch = 0
+                # vbatch = 0
+                misclassified = 0
                 for v, (tx, ty) in enumerate(self.classifier.testloader):
-                    refBoneLengths = self.boneLengths(tx)
+                    # refBoneLengths = self.boneLengths(tx)
+                    #
+                    # # sample x and compute logP(X)
+                    # #ySamples = torch.randint(0, self.args.classNum, (self.args.batchSize,))
+                    # XSamples = self.sampleX(tx,i)
+                    #
+                    # logPX = self.modelEval(tx, i).mean()
+                    # logPXSamples = self.modelEval(XSamples, i).mean()
+                    #
+                    # lossLogPX = -(logPX-logPXSamples)
+                    #
+                    # # compute logP(x_tilde|X, y)
+                    #
+                    # XTilde = self.sampleXTilde(tx, ty, refBoneLengths)
+                    #
+                    # lossPYXTilde = torch.nn.CrossEntropyLoss()(self.modelEval(XTilde, i), ty)
+                    # lossXXTilde = self.xXTildeLoss(tx, XTilde, refBoneLengths)
+                    #
+                    # lossPXTildeXY = lossPYXTilde + self.args.drvWeight * lossXXTilde
+                    #
+                    # lossPXY = torch.nn.CrossEntropyLoss()(self.modelEval(tx, i), ty)
+                    #
+                    # loss = self.args.xWeight * lossLogPX + self.args.xTildeWeight * lossPXTildeXY + self.args.clfWeight * lossPXY
+                    #
+                    # valLoss[i] += loss.detach().item()
+                    # valClfLoss[i] += lossPYX.detach().item()
+                    # vbatch += 1
+                    pred = torch.argmax(self.modelEval(tx), dim=1)
+                    diff = (pred - ty) != 0
+                    misclassified += torch.sum(diff)
 
-                    # sample x and compute logP(X)
-                    #ySamples = torch.randint(0, self.args.classNum, (self.args.batchSize,))
-                    XSamples = self.sampleX(i)
-
-                    logPX = self.modelEval(tx, i).mean()
-                    logPXSamples = self.modelEval(XSamples, i).mean()
-
-                    lossLogPX = -(logPX-logPXSamples)
-
-                    # compute logP(x_tilde|X, y)
-
-                    XTilde = self.sampleXTilde(tx, ty, refBoneLengths)
-
-                    lossPYXTilde = torch.nn.CrossEntropyLoss()(self.modelEval(XTilde, i), ty)
-                    lossXXTilde = self.xXTildeLoss(tx, XTilde, refBoneLengths)
-
-                    lossPXTildeXY = lossPYXTilde + self.args.drvWeight * lossXXTilde
-
-                    lossPXY = torch.nn.CrossEntropyLoss()(self.modelEval(tx, i), ty)
-
-                    loss = self.args.xWeight * lossLogPX + self.args.xTildeWeight * lossPXTildeXY + self.args.clfWeight * lossPXY
-
-                    valLoss[i] += loss.detach().item()
-                    valClfLoss[i] += lossPYX.detach().item()
-                    vbatch += 1
-
-                valLoss[i] /= vbatch
-                valClfLoss[i] /= vbatch
-                logger.add_scalar(('Loss/validation/model%d' % i), valLoss[i], ep)
-                logger.add_scalar(('Loss/validation/clf/model%d' % i), valClfLoss[i], ep)
+                valClfAcc = 1 - misclassified / len(self.classifier.testloader.dataset)
+                # valLoss[i] /= vbatch
+                # valClfLoss[i] /= vbatch
+                # logger.add_scalar(('Loss/validation/model%d' % i), valLoss[i], ep)
+                # logger.add_scalar(('Loss/validation/clf/model%d' % i), valClfLoss[i], ep)
                 if valLoss[i] < bestValLoss[i]:
                     print(f"epoch: {ep} model: {i} per epoch average validation loss improves from: {bestValLoss[i]} to {valLoss[i]}")
                     #modelFile = self.retFolder + '/' + str(i) + '_minValLossAppendedModel_adtrained_' + str(valLoss[i]) + '.pth'
                     #torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
 
                     bestValLoss[i] = valLoss[i]
-                if valClfLoss[i] < bestValClfLoss[i]:
-                    print(f"epoch: {ep} model: {i} per epoch average clf validation loss improves from: {bestValClfLoss[i]} to {valClfLoss[i]}")
+                if valClfAcc > bestValClfAcc[i]:
+                    print(f"epoch: {ep} model: {i} per epoch average clf validation acc improves from: {bestValClfLoss[i]} to {valClfAcc}")
                     modelFile = self.retFolder + '/' + str(i) + '_minValLossAppendedModel_adtrained.pth'
                     torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
 
-                    bestValClfLoss[i] = valClfLoss[i]
+                    bestValClfAcc[i] = valClfAcc
             self.classifier.setTrain()
         return
 
