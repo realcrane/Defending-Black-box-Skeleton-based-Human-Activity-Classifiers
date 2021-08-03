@@ -10,8 +10,9 @@ from AdversarialTrainers.loadATrainers import loadATrainer
 
 def parameteSettingForOptimizers(ap):
 
+    #STGCN uses SGD, with initial learning rate 0.1, the rest uses 0.001 and Adam
     ap.add_argument("-lr", "--learningRate", type=float, required=False, help="to specify an adversarial attacker",
-                    default=1e-1)
+                    default=1e-3)
 
 def parameteSettingForAttackers(ap):
 
@@ -43,17 +44,16 @@ def parameteSettingForAdTrainers(ap):
     ap.add_argument("--burnIn", type=int, required=False, help="training the classifier in normal training mode for -burnIn steps",
                     default=0)
     ap.add_argument("--samplingStep", type=int, required=False, help="sampling step for SGLD", default=10)
-    ap.add_argument("--drvWeight", type=float, required=False, help="weight for the motion derivatives", default=1e-5)
+    ap.add_argument("--drvWeight", type=float, required=False, help="weight for the motion derivatives", default=1)
     ap.add_argument("--bufferSize", type=int, required=False, help="the replay buffer size for SGLD sampling",default=100)
     ap.add_argument("--reinitFreq", type=float, required=False, help="the re-init probability of SGLD sampling",default=.05)
     ap.add_argument("--sgldLr", type=float, required=False, help="the learning rate of SGLD",default=2)
     ap.add_argument("--sgldStd", type=float, required=False, help="the standard deviation of the noise in SGLD",default=5e-3)
     ap.add_argument("--bufferSamples", type=str, required=False, help="buffered data sample file", default='')
     ap.add_argument("--perturbThreshold", type=float, required=False, help="perturbation threshold during p(x_tilde|x)", default=5e-2)
-    ap.add_argument("--xWeight", type=float, required=False, help="weight for logp(x)", default=0.3
-                    )
+    ap.add_argument("--xWeight", type=float, required=False, help="weight for logp(x)", default=0.01)
     ap.add_argument("--clfWeight", type=float, required=False, help="weight for logp(y|x)", default=1)
-    ap.add_argument("--xTildeWeight", type=float, required=False, help="weight for logp(x_tilde|x, y)", default=0.1)
+    ap.add_argument("--xTildeWeight", type=float, required=False, help="weight for logp(x_tilde|x, y)", default=0.005)
 
     ap.add_argument("--bayesianTraining", type=bool, required=False, help="flag for Bayesian Adversarial Training", default=False)
     ap.add_argument("--bayesianModelNum", type=int, required=False, help="the number of models to train",

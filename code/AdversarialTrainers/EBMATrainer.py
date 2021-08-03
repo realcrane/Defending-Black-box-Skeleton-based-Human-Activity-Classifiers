@@ -14,48 +14,54 @@ class EBMATrainer(AdversarialTrainer):
         self.classifier = loadClassifier(args)
         self.retFolder = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/' + self.args.adTrainer + '/'
         if args.bayesianTraining:
-            self.replayBufferList = [self.initRandom() for i in range(args.bayesianModelNum)]
+            self.replayBufferList = [[] for i in range(args.bayesianModelNum)]
         else:
             if len(args.bufferSamples) > 0:
                 self.replayBuffer = torch.FloatTensor(np.load(args.bufferSamples)['clips'])
             else:
-                self.replayBuffer = self.initRandom()
+                self.replayBuffer = []
 
 
         if not os.path.exists(self.retFolder):
             os.makedirs(self.retFolder)
+
+        self.configureOptimiser()
+    def configureOptimiser(self):
+
+        if not self.args.bayesianTraining:
+            self.optimiser = torch.optim.Adam(self.classifier.model.parameters(), lr=self.args.learningRate, weight_decay=0.0001)
 
     def modelEval(self, X, modelNo = -1):
 
         if self.args.bayesianTraining:
             pred = self.classifier.modelEval(X, modelNo)
         else:
-            pred = torch.nn.ReLU()(self.classifier.model(X))
+            pred = torch.nn.Sigmoid()(self.classifier.model(X))
         return pred
 
-    def initRandom(self):
-        return torch.FloatTensor(self.args.batchSize, self.classifier.trainloader.dataset.data.shape[1], self.classifier.trainloader.dataset.data.shape[2]).uniform_(-1, 1)
+    def initRandom(self, X):
+        return torch.FloatTensor(np.random.uniform(-1, 1, X.shape).astype('float32'))
 
-    def sampleP0(self, rb = -1, y=None):
+    def sampleP0(self, X, rb = -1, y=None):
         #currently, we do not do conditioned sampling, y is not used
         if rb == -1:
             replayBuffer = self.replayBuffer
         else:
             replayBuffer = self.replayBufferList[rb]
         if len(replayBuffer) == 0:
-            return self.initRandom(), []
+            return self.initRandom(X), []
         self.args.bufferSize = len(replayBuffer) if y is None else len(replayBuffer)
         inds = torch.randint(0, self.args.bufferSize, (self.args.batchSize,))
         # if cond, convert inds to class conditional inds
         # if y is not None:
         #     inds = y.cpu() * self.args.bufferSize + inds
         bufferSamples = replayBuffer[inds]
-        randomSamples = self.initRandom()
+        randomSamples = self.initRandom(X)
         choose_random = (torch.rand(self.args.batchSize) < self.args.reinitFreq).float()[:, None, None]
         samples = choose_random * randomSamples + (1 - choose_random) * bufferSamples
         return samples, inds
 
-    def sampleX(self, rb = -1, y=None):
+    def sampleX(self, X, rb = -1, y=None):
         if rb == -1:
             replayBuffer = self.replayBuffer
         else:
@@ -65,7 +71,7 @@ class EBMATrainer(AdversarialTrainer):
         # get batch size
         bs = self.args.batchSize if y is None else y.size(0)
         # generate initial samples and buffer inds of those samples (if buffer is used)
-        initSample, bufferInds = self.sampleP0(rb)
+        initSample, bufferInds = self.sampleP0(X, rb)
         x_k = torch.autograd.Variable(initSample, requires_grad=True).to(device)
         # sgld
         for k in range(self.args.samplingStep):
@@ -81,11 +87,22 @@ class EBMATrainer(AdversarialTrainer):
         return final_samples
 
     def boneLengths(self, x):
-        jpositions = torch.reshape(x, (x.shape[0], x.shape[1], -1, 3))
+        x = self.reshapeData(x)
+        if len(x.shape) == 3:
+            jpositions = torch.reshape(x, (x.shape[0], x.shape[1], -1, 3))
 
-        boneVecs = jpositions - jpositions[:, :, self.classifier.trainloader.dataset.parents, :]
+            boneVecs = jpositions - jpositions[:, :, self.classifier.trainloader.dataset.parents, :]
 
-        boneLengths = torch.sqrt(torch.sum(torch.square(boneVecs), axis=-1) + 1.e-10)
+            boneLengths = torch.sqrt(torch.sum(torch.square(boneVecs), axis=-1) + 1.e-10)
+        elif len(x.shape) == 4:
+            jpositions = torch.reshape(x, (x.shape[0], x.shape[1], -1, 3, x.shape[3]))
+
+            boneVecs = jpositions - jpositions[:, :, self.classifier.trainloader.dataset.parents, :, :]
+
+            boneLengths = torch.sqrt(torch.sum(torch.square(boneVecs), axis=-2) + 1.e-10)
+        else:
+            boneLengths = []
+            print('unknown data structure for bone lengths computation')
 
         return boneLengths
 
@@ -97,15 +114,19 @@ class EBMATrainer(AdversarialTrainer):
         #bone length loss
         boneLengths = self.boneLengths(xTilde)
 
-        boneLengthsLoss = torch.mean(
-            torch.sum(torch.sum(torch.square(boneLengths - refBoneLengths), axis=-1), axis=-1))
+        # boneLengthsLoss = torch.mean(
+        #     torch.sum(torch.sum(torch.square(boneLengths - refBoneLengths), axis=-1), axis=-1))
 
+        boneLengthsLoss = torch.nn.functional.mse_loss(boneLengths, refBoneLengths)
+
+        x_k = self.reshapeData(x_k)
+        x_tilde_k = self.reshapeData(x_tilde_k)
 
         for k in range(drv_order):
-            x_k = x_k[:, 1:, :] - x_k[:, :-1, :]
-            x_tilde_k = x_tilde_k[:, 1:, :] - x_tilde_k[:, :-1, :]
+            x_k = x_k[:, 1:] - x_k[:, :-1]
+            x_tilde_k = x_tilde_k[:, 1:] - x_tilde_k[:, :-1]
 
-            loss_drv += torch.norm(x_k - x_tilde_k)
+            loss_drv += torch.nn.functional.mse_loss(x_k, x_tilde_k)
 
         return loss_drv + boneLengthsLoss
 
@@ -151,6 +172,17 @@ class EBMATrainer(AdversarialTrainer):
 
         return x_tilde_k.detach()
 
+    def reshapeData(self, x, toNative=True):
+        if self.classifier.args.args.dataset == 'ntu60' or self.classifier.args.args.dataset == 'ntu120':
+            #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
+            if toNative:
+                x = x.permute(0, 2, 3, 1, 4)
+                x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
+            else:
+                x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
+                x = x.permute(0, 3, 1, 2, 4)
+        return x
+
     def adversarialTrain(self):
 
         size = len(self.classifier.trainloader.dataset)
@@ -158,7 +190,7 @@ class EBMATrainer(AdversarialTrainer):
         bestLoss = np.infty
         bestValLoss = np.infty
         bestClfLoss = np.infty
-        bestValClfLoss = np.infty
+        bestValClfAcc = 0
         logger = SummaryWriter()
 
         #burn-in for classifier
@@ -180,13 +212,14 @@ class EBMATrainer(AdversarialTrainer):
             batchNum = 0
 
             for batch, (X, y) in enumerate(self.classifier.trainloader):
-                batchNum += 1
                 refBoneLengths = self.boneLengths(X)
+                batchNum += 1
+
 
                 # sample x and compute logP(X)
                 # ySamples = torch.randint(0, self.args.classNum, (self.args.batchSize,))
 
-                XSamples = self.sampleX()
+                XSamples = self.sampleX(X)
 
                 logPX = self.modelEval(X).mean()
 
@@ -211,9 +244,9 @@ class EBMATrainer(AdversarialTrainer):
                 epClfLoss += lossPYX.detach().item()
 
                 # Backpropagation
-                self.classifier.optimiser.zero_grad()
+                self.optimiser.zero_grad()
                 loss.backward()
-                self.classifier.optimiser.step()
+                self.optimiser.step()
 
                 loss, current = loss.detach().item(), batch * len(X)
                 print(f"epoch: {ep}/{self.args.epochs}  loss: {loss:>7f}  lossLogPX: {lossLogPX:>6f}, lossPXTildeXY: {lossPXTildeXY:>6f}, lossPYX: {lossPYX:>6f}"
@@ -240,54 +273,65 @@ class EBMATrainer(AdversarialTrainer):
             print(f"epoch: {ep} time elapsed: {(time.time() - startTime) / 3600 - valTime} hours")
             # run validation and save a model if the best validation loss so far has been achieved.
             valStartTime = time.time()
-            valLoss = 0
-            valClfLoss = 0
+            #valLoss = 0
+            #valClfLoss = 0
             vbatch = 0
+            misclassified = 0
             self.classifier.model.eval()
             for v, (tx, ty) in enumerate(self.classifier.testloader):
-                refBoneLengths = self.boneLengths(tx)
+                # refBoneLengths = self.boneLengths(tx)
+                #
+                # # sample x and compute logP(X)
+                # ySamples = torch.randint(0, self.args.classNum, (self.args.batchSize,))
+                # XSamples = self.sampleX()
+                #
+                # logPX = self.modelEval(tx).mean()
+                # logPXSamples = self.modelEval(XSamples).mean()
+                #
+                # lossLogPX = -(logPX-logPXSamples)
+                #
+                # # compute logP(x_tilde|X, y)
+                #
+                # XTilde = self.sampleXTilde(tx, ty, refBoneLengths)
+                #
+                # lossPYXTilde = torch.nn.CrossEntropyLoss()(self.modelEval(XTilde), ty)
+                # lossXXTilde = self.xXTildeLoss(tx, XTilde, refBoneLengths)
+                #
+                # lossPXTildeXY = lossPYXTilde + self.args.drvWeight * lossXXTilde
 
-                # sample x and compute logP(X)
-                ySamples = torch.randint(0, self.args.classNum, (self.args.batchSize,))
-                XSamples = self.sampleX()
+                #lossPXY = torch.nn.CrossEntropyLoss()(self.modelEval(tx), ty)
 
-                logPX = self.modelEval(tx).mean()
-                logPXSamples = self.modelEval(XSamples).mean()
+                #loss = self.args.xWeight * lossLogPX + self.args.xTildeWeight * lossPXTildeXY + self.args.clfWeight * lossPXY
 
-                lossLogPX = -(logPX-logPXSamples)
+                #valLoss += loss.detach().item()
+                #valClfLoss += lossPYX.detach().item()
+                #vbatch += 1
 
-                # compute logP(x_tilde|X, y)
+                pred = torch.argmax(self.modelEval(tx), dim=1)
+                diff = (pred - ty) != 0
+                misclassified += torch.sum(diff)
 
-                XTilde = self.sampleXTilde(tx, ty, refBoneLengths)
-
-                lossPYXTilde = torch.nn.CrossEntropyLoss()(self.modelEval(XTilde), ty)
-                lossXXTilde = self.xXTildeLoss(tx, XTilde, refBoneLengths)
-
-                lossPXTildeXY = lossPYXTilde + self.args.drvWeight * lossXXTilde
-
-                lossPXY = torch.nn.CrossEntropyLoss()(self.modelEval(tx), ty)
-
-                loss = self.args.xWeight * lossLogPX + self.args.xTildeWeight * lossPXTildeXY + self.args.clfWeight * lossPXY
-
-                valLoss += loss.detach().item()
-                valClfLoss += lossPYX.detach().item()
-                vbatch += 1
-
-            valLoss /= vbatch
-            valClfLoss /= vbatch
-            logger.add_scalar('Loss/validation', valLoss, ep)
-            logger.add_scalar('Loss/validation/clf', valClfLoss, ep)
+            #valLoss /= vbatch
+            #valClfLoss /= vbatch
+            #logger.add_scalar('Loss/validation', valLoss, ep)
+            #logger.add_scalar('Loss/validation/clf', valClfLoss, ep)
             self.classifier.model.train()
-            if valLoss < bestValLoss:
-                print(f"epoch: {ep} per epoch average validation loss improves from: {bestValLoss} to {valLoss}")
-                #modelFile = self.retFolder + '/minValLossModel_adtrained_' + str(valLoss) + '.pth'
-                #torch.save(self.classifier.model.state_dict(), modelFile)
-                bestValLoss = valLoss
-            if valClfLoss < bestValClfLoss:
-                print(f"epoch: {ep} per epoch average clf validation loss improves from: {bestValClfLoss} to {valClfLoss}")
+            # if valLoss < bestValLoss:
+            #     print(f"epoch: {ep} per epoch average validation loss improves from: {bestValLoss} to {valLoss}")
+            #     #modelFile = self.retFolder + '/minValLossModel_adtrained_' + str(valLoss) + '.pth'
+            #     #torch.save(self.classifier.model.state_dict(), modelFile)
+            #     bestValLoss = valLoss
+            # if valClfLoss < bestValClfLoss:
+            #     print(f"epoch: {ep} per epoch average clf validation loss improves from: {bestValClfLoss} to {valClfLoss}")
+            #     modelFile = self.retFolder + '/minValLossModel_adtrained.pth'
+            #     torch.save(self.classifier.model.state_dict(), modelFile)
+            #     bestValClfLoss = valClfLoss
+            valClfAcc = 1 - misclassified / len(self.classifier.testloader.dataset)
+            if valClfAcc > bestValClfAcc:
+                print(f"epoch: {ep} clf validation accuracy improves from: {bestValClfAcc} to {valClfAcc}")
                 modelFile = self.retFolder + '/minValLossModel_adtrained.pth'
                 torch.save(self.classifier.model.state_dict(), modelFile)
-                bestValClfLoss = valClfLoss
+                bestValClfAcc = valClfAcc
             valEndTime = time.time()
             valTime += (valEndTime - valStartTime) / 3600
         return

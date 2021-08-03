@@ -207,6 +207,7 @@ class STGCN(ActionClassifier):
     def modelEval(self, X, modelNo = -1):
         return self.model(X)
 
+
     #this function is to train the classifier from scratch
     def train(self):
         size = len(self.trainloader.dataset)
