@@ -8,11 +8,11 @@ class CDataset(Dataset):
     def __init__(self, args, transform=None, target_transform=None):
         data = ''
         if args.routine == 'train' or args.routine == 'adTrain' or args.routine == 'bayesianTrain':
-            data = np.load(args.dataFolder + '/' + args.dataset + '/' + args.trainFile)
+            data = np.load(args.dataPath + '/' + args.dataset + '/' + args.trainFile)
         elif args.routine == 'attack':
             data = np.load(args.retFolder + '/' + args.dataset + '/' + args.classifier + '/' + args.trainFile)
         elif args.routine == 'test' or args.routine == 'gatherCorrectPrediction' or args.routine == 'bayesianTest':
-            data = np.load(args.dataFolder + '/' + args.dataset + '/' + args.testFile)
+            data = np.load(args.dataPath + '/' + args.dataset + '/' + args.testFile)
         else:
             print('Unknown routine, cannot create the dataset')
 

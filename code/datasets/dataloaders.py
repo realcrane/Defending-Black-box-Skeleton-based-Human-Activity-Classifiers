@@ -1,3 +1,5 @@
+import pdb
+
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 from datasets.CDataset import *
@@ -6,11 +8,11 @@ import numpy as np
 
 def createDataLoader(args):
     trainloader = ''
-    validationloader = ''
     testloader = ''
-    if args.dataset == 'hdm05' or args.dataset == 'ntu60':
+
+    if args.dataset == 'hdm05' or args.dataset == 'ntu60' or args.dataset == 'ntu120':
         if args.routine == 'train' or args.routine == 'adTrain' or args.routine == 'bayesianTrain':
-            if args.dataset == 'ntu60':
+            if args.dataset == 'ntu60' or args.dataset == 'ntu120':
                 traindataset = NTUDataset(args)
             else:
                 traindataset = CDataset(args)
@@ -37,17 +39,30 @@ def createDataLoader(args):
             #                               sampler=train_sampler)
             # validationloader = DataLoader(traindataset, batch_size=args.batchSize,
             #                                    sampler=valid_sampler)
+
             if len(args.testFile):
-                testdataset = CDataset(args)
+                routine = args.routine
+                args.routine = 'test'
+                if args.dataset == 'ntu60' or args.dataset == 'ntu120':
+                    testdataset = NTUDataset(args)
+                else:
+                    testdataset = CDataset(args)
+                args.routine = routine
                 testloader = DataLoader(testdataset, batch_size=args.batchSize, shuffle=False)
 
         elif args.routine == 'test' or args.routine == 'gatherCorrectPrediction' or args.routine == 'bayesianTest':
             if len(args.testFile):
-                testdataset = CDataset(args)
+                if args.dataset == 'ntu60' or args.dataset == 'ntu120':
+                    testdataset = NTUDataset(args)
+                else:
+                    testdataset = CDataset(args)
                 testloader = DataLoader(testdataset, batch_size=args.batchSize, shuffle=False)
 
         elif args.routine == 'attack':
-            traindataset = CDataset(args)
+            if args.dataset == 'ntu60' or args.dataset == 'ntu120':
+                traindataset = NTUDataset(args)
+            else:
+                traindataset = CDataset(args)
             trainloader = DataLoader(traindataset, batch_size=args.batchSize, shuffle=False)
     else:
         print ('No dataset is loaded in ThreeLayerMLPArgs')
