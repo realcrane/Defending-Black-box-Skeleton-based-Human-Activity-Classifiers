@@ -61,6 +61,9 @@ python main.py --routine attack -attacker CIASA --attackType ab --dataset hdm05 
 ############NTU60
 ########train&test classifiers on ntu60
 python main.py -classifier STGCN --routine train --dataset ntu60 --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 60
+python main.py -classifier CTRGCN --routine train --dataset ntu60 --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 60
+
+
 python main.py -classifier STGCN --routine test --dataset ntu60 --testFile classTest.npz --trainedModelFile minValLossModel.pth --dataPath ../data/ -retPath ../results/ -cn 60
 python main.py -classifier STGCN --routine gatherCorrectPrediction --dataset ntu60 --testFile classTest.npz --trainedModelFile minValLossModel.pth --dataPath ../data/ -retPath ../results/ -cn 60
 

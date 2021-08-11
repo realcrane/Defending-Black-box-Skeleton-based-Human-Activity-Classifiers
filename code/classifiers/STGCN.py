@@ -18,7 +18,7 @@ class STGCN(ActionClassifier):
         super().__init__(args)
         self.trainloader, self.testloader = createDataLoader(args)
         self.createModel()
-        self.steps = [10, 50]
+        self.steps = [40, 70]
     def createModel(self):
         #this is a wrapper of the original STGCN code, with minor modification on the input format
         class Classifier(nn.Module):
@@ -164,14 +164,14 @@ class STGCN(ActionClassifier):
 
         if len(self.args.trainedModelFile) > 0:
             if len(self.args.adTrainer) == 0:
-                self.model.load_state_dict(torch.load(self.retPath + self.args.trainedModelFile))
+                self.model.load_state_dict(torch.load(self.retFolder + self.args.trainedModelFile))
             else:
                 if self.args.bayesianTraining:
                     self.model.load_state_dict(torch.load(self.args.retPath + self.args.dataset + '/' +
                                         self.args.baseClassifier + '/' + self.args.trainedModelFile))
                 else:
                     self.model.load_state_dict(
-                        torch.load(self.retPath + self.args.adTrainer + '/' + self.args.trainedModelFile))
+                        torch.load(self.retFolder + self.args.adTrainer + '/' + self.args.trainedModelFile))
 
         self.configureOptimiser()
         self.classificationLoss()

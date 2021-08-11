@@ -1,7 +1,7 @@
 import numpy as np
 
 class Graph():
-    """ The Graph to model the skeletons extracted by the openpose
+    """ The graph to model the skeletons extracted by the openpose
 
     Args:
         strategy (string): must be one of the follow candidates

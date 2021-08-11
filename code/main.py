@@ -56,7 +56,7 @@ def parameteSettingForAdTrainers(ap):
     ap.add_argument("--xTildeWeight", type=float, required=False, help="weight for logp(x_tilde|x, y)", default=0.005)
 
     ap.add_argument("--bayesianTraining", type=bool, required=False, help="flag for Bayesian Adversarial Training", default=False)
-    ap.add_argument("--bayesianModelNum", type=int, required=False, help="the number of models to train",
+    ap.add_argument("--bayesianModelNum", type=int, required=False, help="the number of model to train",
                     default=5)
     ap.add_argument("-bayesianAdTrainFile", "--bayesianAdTrainFile", type=str, required=False,
                     help="the file name of the correctly classified data samples from a bayesian AT for adversarial attack",
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     ap.add_argument("-r", "--routine", type=str, required=True, help="program to run",
                     choices=["train", "test", "gatherCorrectPrediction", "attack", "adTrain", "bayesianTrain", "bayesianTest"])
     ap.add_argument("-classifier", "--classifier", type=str, required=True, help="choose the classifier to train/test/attack",
-                    choices=["3layerMLP", "STGCN", "ExtendedBayesian"])
+                    choices=["3layerMLP", "STGCN", "ExtendedBayesian", "CTRGCN"])
     ap.add_argument("-dataset", "--dataset", type=str, required=True, help="choose the dataset",
                     choices=["hdm05", "ntu60"])
 
