@@ -448,6 +448,7 @@ class CIASAAttacker(ActionAttacker):
                 else:
                     tempCopy[missedIndices] = temp[missedIndices]
             overallFoolRate += maxFoolRate
+            print(f"Current fool rate is {overallFoolRate/batchTotalNum}")
 
         print(f"Overall fool rate is {overallFoolRate/batchTotalNum}")
         return overallFoolRate/batchTotalNum

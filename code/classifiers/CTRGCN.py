@@ -112,11 +112,15 @@ class CTRGCN(ActionClassifier):
             if len(self.args.adTrainer) == 0:
                 self.model.load_state_dict(torch.load(self.retFolder + self.args.trainedModelFile))
             else:
-                if self.args.args.bayesianTraining:
-                    self.model.load_state_dict(torch.load(self.args.retFolder + self.args.dataset + '/' +
+                if self.args.bayesianTraining:
+                    self.model.load_state_dict(torch.load(self.args.retPath + self.args.dataset + '/' +
                                         self.args.baseClassifier + '/' + self.args.trainedModelFile))
                 else:
-                    self.model.load_state_dict(
+                    if len(self.args.initWeightFile) > 0:
+                        self.model.load_state_dict(
+                            torch.load(self.retFolder + self.args.initWeightFile))
+                    else:
+                        self.model.load_state_dict(
                         torch.load(self.retFolder + self.args.adTrainer + '/' + self.args.trainedModelFile))
 
         self.configureOptimiser()
@@ -124,7 +128,7 @@ class CTRGCN(ActionClassifier):
         self.model.to(device)
     def configureOptimiser(self):
 
-        #self.optimiser = torch.optim.Adam(self.model.parameters(), lr=self.args.args.learningRate, weight_decay=0.0001)
+        #self.optimiser = torch.optim.Adam(self.model.parameters(), lr=self.args.learningRate, weight_decay=0.0001)
         self.optimiser = torch.optim.SGD(
                 self.model.parameters(),
                 lr=self.args.learningRate,

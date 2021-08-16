@@ -6,13 +6,14 @@ from datasets.CDataset import *
 from classifiers.loadClassifiers import loadClassifier
 from Attackers.loadAttackers import loadAttacker
 from AdversarialTrainers.loadATrainers import loadATrainer
-
+from Configuration import *
+import torch
 
 def parameteSettingForOptimizers(ap):
 
     #STGCN uses SGD, with initial learning rate 0.1, the rest uses 0.001 and Adam
     ap.add_argument("-lr", "--learningRate", type=float, required=False, help="to specify an adversarial attacker",
-                    default=1e-1)
+                    default=1e-3)
 
 def parameteSettingForAttackers(ap):
 
@@ -47,17 +48,18 @@ def parameteSettingForAdTrainers(ap):
     ap.add_argument("--drvWeight", type=float, required=False, help="weight for the motion derivatives", default=1)
     ap.add_argument("--bufferSize", type=int, required=False, help="the replay buffer size for SGLD sampling",default=100)
     ap.add_argument("--reinitFreq", type=float, required=False, help="the re-init probability of SGLD sampling",default=.05)
-    ap.add_argument("--sgldLr", type=float, required=False, help="the learning rate of SGLD",default=2)
+    ap.add_argument("--sgldLr", type=float, required=False, help="the learning rate of SGLD",default=0.01)
     ap.add_argument("--sgldStd", type=float, required=False, help="the standard deviation of the noise in SGLD",default=5e-3)
     ap.add_argument("--bufferSamples", type=str, required=False, help="buffered data sample file", default='')
     ap.add_argument("--perturbThreshold", type=float, required=False, help="perturbation threshold during p(x_tilde|x)", default=5e-2)
-    ap.add_argument("--xWeight", type=float, required=False, help="weight for logp(x)", default=0.01)
+    ap.add_argument("--xWeight", type=float, required=False, help="weight for logp(x)", default=0.1)
     ap.add_argument("--clfWeight", type=float, required=False, help="weight for logp(y|x)", default=1)
-    ap.add_argument("--xTildeWeight", type=float, required=False, help="weight for logp(x_tilde|x, y)", default=0.005)
+    ap.add_argument("--xTildeWeight", type=float, required=False, help="weight for logp(x_tilde|x, y)", default=0.05)
+    ap.add_argument("--initWeightFile", type=str, required=False, help="the network weights for initialization", default='')
 
     ap.add_argument("--bayesianTraining", type=bool, required=False, help="flag for Bayesian Adversarial Training", default=False)
     ap.add_argument("--bayesianModelNum", type=int, required=False, help="the number of model to train",
-                    default=5)
+                    default=1)
     ap.add_argument("-bayesianAdTrainFile", "--bayesianAdTrainFile", type=str, required=False,
                     help="the file name of the correctly classified data samples from a bayesian AT for adversarial attack",
                     default='bayesianAdClassTrain.npz')
@@ -80,13 +82,14 @@ def parameteSettingForClassifiers(ap):
                     help="the pre-trained appended model weight file, under --retPath", default='')
 
     ap.add_argument("-ep", "--epochs", type=int, required=False, help="to specify the number of epochs for training",
-                    default=110)
+                    default=80)
     ap.add_argument("-cn", "--classNum", type=int, required=True, help="to specify the number of classes")
     ap.add_argument("-bs", "--batchSize", type=int, required=False, help="to specify the number of classes",
                     default=32)
     ap.add_argument("-adTrainFile", "--adTrainFile", type=str, required=False,
                     help="the file name of the correctly classified data samples for adversarial attack",
                     default='adClassTrain.npz')
+    ap.add_argument("-optimiser", "--optimiser", type=str, required=False, help="choose the opimiser",default='SGD')
 
     #set up for STGCN, for running the original code
     ap.add_argument("-inputDim", "--inputDim", type=int, required=False, help="STGCN: the input channel number", default=3)
@@ -124,8 +127,6 @@ if __name__ == '__main__':
 
     args = ap.parse_args()
     routine = args.routine
-
-
 
 
     if routine == 'train':

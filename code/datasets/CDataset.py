@@ -29,11 +29,10 @@ class CDataset(Dataset):
 
     def __getitem__(self, idx):
         data = self.data[idx]
-        ##data format conversion for different classifiers
-        if self.args.classifier == 'STGCN':
-            if self.args.dataset == 'hdm05':
-                x = data.reshape((data.shape[0], -1, 3, 1))
-                data = x.permute(2, 0, 1, 3)
+        ##data format conversion to be consistent with ntu
+        if self.args.dataset == 'hdm05':
+            x = data.reshape((data.shape[0], -1, 3, 1))
+            data = x.permute(2, 0, 1, 3)
 
         label = self.labels[idx]
         return data.to(device), label.to(device)

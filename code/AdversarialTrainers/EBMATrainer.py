@@ -173,14 +173,13 @@ class EBMATrainer(AdversarialTrainer):
         return x_tilde_k.detach()
 
     def reshapeData(self, x, toNative=True):
-        if self.classifier.args.args.dataset == 'ntu60' or self.classifier.args.args.dataset == 'ntu120':
-            #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
-            if toNative:
-                x = x.permute(0, 2, 3, 1, 4)
-                x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
-            else:
-                x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
-                x = x.permute(0, 3, 1, 2, 4)
+        #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
+        if toNative:
+            x = x.permute(0, 2, 3, 1, 4)
+            x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
+        else:
+            x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
+            x = x.permute(0, 3, 1, 2, 4)
         return x
 
     def adversarialTrain(self):
@@ -358,7 +357,8 @@ class EBMATrainer(AdversarialTrainer):
                     loss.backward()
                     self.classifier.optimiserList[m].step()
 
-
+        startTime = time.time()
+        valTime = 0
         for ep in range(self.args.epochs):
             epLoss = np.zeros(self.args.bayesianModelNum)
             epClfLoss = np.zeros(self.args.bayesianModelNum)
@@ -422,7 +422,8 @@ class EBMATrainer(AdversarialTrainer):
                     # modelFile = self.retFolder + '/' + str(i) + '_minLossAppendedModel_adtrained.pth'
                     # torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
                     bestClfLoss[i] = epClfLoss[i]
-
+            print(f"epoch: {ep} time elapsed: {(time.time() - startTime) / 3600 - valTime} hours")
+            valStartTime = time.time()
             # run validation and save a model if the best validation loss so far has been achieved.
             valLoss = np.zeros(self.args.bayesianModelNum)
             valClfLoss = np.zeros(self.args.bayesianModelNum)
@@ -479,6 +480,8 @@ class EBMATrainer(AdversarialTrainer):
                     torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
 
                     bestValClfAcc[i] = valClfAcc
+            valEndTime = time.time()
+            valTime += (valEndTime - valStartTime) / 3600
             self.classifier.setTrain()
         return
 

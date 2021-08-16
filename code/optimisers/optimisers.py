@@ -73,7 +73,7 @@ Stochastic Adaptive HMC
 
 class SGAdaHMC(Optimizer):
     def __init__(self, params, config):
-        defaults = dict(lr=0.01, alpha=0, gamma=0.01, L=15, T=1e-5, tao=2, C=1)
+        defaults = dict(lr=0.001, alpha=0, gamma=0.01, L=15, T=1e-5, tao=2, C=1)
         for k in defaults:
             if config.get(k, None) is None:
                 config[k] = defaults[k]

@@ -162,7 +162,8 @@ class STGCN(ActionClassifier):
 
         self.retFolder = self.args.retPath + self.args.dataset + '/' + self.args.classifier + '/'
 
-        if len(self.args.trainedModelFile) > 0:
+
+        if len(self.args.trainedModelFile) > 0 or len(self.args.initWeightFile) > 0:
             if len(self.args.adTrainer) == 0:
                 self.model.load_state_dict(torch.load(self.retFolder + self.args.trainedModelFile))
             else:
@@ -170,31 +171,37 @@ class STGCN(ActionClassifier):
                     self.model.load_state_dict(torch.load(self.args.retPath + self.args.dataset + '/' +
                                         self.args.baseClassifier + '/' + self.args.trainedModelFile))
                 else:
-                    self.model.load_state_dict(
-                        torch.load(self.retFolder + self.args.adTrainer + '/' + self.args.trainedModelFile))
+                    if len(self.args.initWeightFile) > 0:
+                        self.model.load_state_dict(
+                            torch.load(self.retFolder + self.args.initWeightFile))
+                    else:
+                        self.model.load_state_dict(
+                            torch.load(self.retFolder + self.args.adTrainer + '/' + self.args.trainedModelFile))
 
         self.configureOptimiser()
         self.classificationLoss()
         self.model.to(device)
     def configureOptimiser(self):
-
-        #self.optimiser = torch.optim.Adam(self.model.parameters(), lr=self.args.learningRate, weight_decay=0.0001)
-        self.optimiser = torch.optim.SGD(
-                self.model.parameters(),
-                lr=self.args.learningRate,
-                momentum=0.9,
-                nesterov=True,
-                weight_decay=0.0001)
+        if self.args.optimiser == 'Adam':
+            self.optimiser = torch.optim.Adam(self.model.parameters(), lr=self.args.learningRate, weight_decay=0.0001)
+        elif self.args.optimiser == 'SGD':
+            self.optimiser = torch.optim.SGD(
+                    self.model.parameters(),
+                    lr=self.args.learningRate,
+                    momentum=0.9,
+                    nesterov=True,
+                    weight_decay=0.0001)
 
     def adjustLearningRate(self, epoch):
-        if self.steps:
-            lr = self.args.learningRate * (
-                0.1**np.sum(epoch >= np.array(self.steps)))
-            for param_group in self.optimiser.param_groups:
-                param_group['lr'] = lr
-            self.lr = lr
-        else:
-            self.lr = self.args.learningRate
+        if self.args.optimiser == 'SGD':
+            if self.steps:
+                lr = self.args.learningRate * (
+                    0.1**np.sum(epoch >= np.array(self.steps)))
+                for param_group in self.optimiser.param_groups:
+                    param_group['lr'] = lr
+                self.lr = lr
+            else:
+                self.lr = self.args.learningRate
     def classificationLoss(self):
 
         self.classLoss = torch.nn.CrossEntropyLoss()

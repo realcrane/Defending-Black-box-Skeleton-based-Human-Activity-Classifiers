@@ -9,21 +9,24 @@ from optimisers.optimisers import SGAdaHMC
 from shared.helpers import *
 from classifiers.ThreeLayerMLP import ThreeLayerMLP
 from classifiers.STGCN import STGCN
+from classifiers.CTRGCN import CTRGCN
 from datasets.dataloaders import *
 
 
 class ExtendedBayesianClassifier(ActionClassifier):
     def __init__(self, args):
         super().__init__(args)
-        args.args.bayesianTraining = True
+        args.bayesianTraining = True
         self.trainloader, self.testloader = createDataLoader(args)
-        if args.args.baseClassifier == '3layerMLP':
+        if args.baseClassifier == '3layerMLP':
             self.classifier = ThreeLayerMLP(args)
-        elif args.args.baseClassifier == 'STGCN':
+        elif args.baseClassifier == 'STGCN':
             self.classifier = STGCN(args)
+        elif args.baseClassifier == 'CTRGCN':
+            self.classifier = CTRGCN(args)
 
         self.classifier.model.eval()
-        self.retFolder = self.args.args.retPath + '/' + self.args.args.dataset + '/' + self.args.args.classifier + '/' + self.args.args.adTrainer + '/'
+        self.retFolder = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/' + self.args.adTrainer + '/'
         self.createModel()
 
     def createModel(self):
@@ -43,22 +46,22 @@ class ExtendedBayesianClassifier(ActionClassifier):
                 return logits
 
 
-        self.modelList = [AppendedModel(self.classifier) for i in range(self.args.args.bayesianModelNum)]
+        self.modelList = [AppendedModel(self.classifier) for i in range(self.args.bayesianModelNum)]
         for model in self.modelList:
             model.to(device)
             model.model.train()
 
-        if len(self.args.args.trainedAppendedModelFile) > 0:
-            for i in range(self.args.args.bayesianModelNum):
+        if len(self.args.trainedAppendedModelFile) > 0:
+            for i in range(self.args.bayesianModelNum):
                 self.modelList[i].model.load_state_dict(
-                    torch.load(self.retFolder + '/' + str(i) + '_' + self.args.args.trainedAppendedModelFile))
+                    torch.load(self.retFolder + '/' + str(i) + '_' + self.args.trainedAppendedModelFile))
 
         self.configureOptimiser()
         self.classificationLoss()
     def configureOptimiser(self):
 
         self.optimiserList = [SGAdaHMC(self.modelList[i].model.parameters(), config=dict())
-                              for i in range(self.args.args.bayesianModelNum)]
+                              for i in range(self.args.bayesianModelNum)]
 
     def classificationLoss(self):
 
@@ -121,9 +124,9 @@ class ExtendedBayesianClassifier(ActionClassifier):
         adLabels = self.classifier.testloader.dataset.rlabels[results.astype(bool)]
 
         print(f"{len(adLabels)} out of {len(results)} motions are collected")
-        path = self.args.args.retPath + '/' + self.args.args.dataset + '/' + self.args.args.classifier + '/'
+        path = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/'
         if not os.path.exists(path):
             os.makedirs(path)
-        np.savez_compressed(path + self.args.args.bayesianAdTrainFile, clips=adData, classes=adLabels)
+        np.savez_compressed(path + self.args.bayesianAdTrainFile, clips=adData, classes=adLabels)
 
         return len(adLabels)
