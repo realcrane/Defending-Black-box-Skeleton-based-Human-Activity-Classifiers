@@ -175,14 +175,14 @@ class SmartAttacker(ActionAttacker):
 
 
     def reshapeData(self, x, toNative=True):
-        if self.classifier.args.dataset == 'ntu60' or self.classifier.args.dataset == 'ntu120':
-            #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
-            if toNative:
-                x = x.permute(0, 2, 3, 1, 4)
-                x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
-            else:
-                x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
-                x = x.permute(0, 3, 1, 2, 4)
+
+        #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
+        if toNative:
+            x = x.permute(0, 2, 3, 1, 4)
+            x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
+        else:
+            x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
+            x = x.permute(0, 3, 1, 2, 4)
         return x
     def attack(self):
 
@@ -232,6 +232,7 @@ class SmartAttacker(ActionAttacker):
 
                 # the standard format is [batch_no, frames, DoFs]. If the tx.shape > 3, then we need reformat it
                 # if the data contains more than one person, then the loss is the summed losses of all people
+
                 if len(tx.shape) > 3:
                     convertedData = self.reshapeData(tx)
                     convertedAdData = self.reshapeData(adData)
