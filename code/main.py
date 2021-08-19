@@ -115,7 +115,7 @@ if __name__ == '__main__':
     ap.add_argument("-r", "--routine", type=str, required=True, help="program to run",
                     choices=["train", "test", "gatherCorrectPrediction", "attack", "adTrain", "bayesianTrain", "bayesianTest"])
     ap.add_argument("-classifier", "--classifier", type=str, required=True, help="choose the classifier to train/test/attack",
-                    choices=["3layerMLP", "STGCN", "ExtendedBayesian", "CTRGCN","SGN","MSG3D"])
+                    choices=["3layerMLP", "STGCN", "ExtendedBayesian", "CTRGCN"])
     ap.add_argument("-dataset", "--dataset", type=str, required=True, help="choose the dataset",
                     choices=["hdm05", "ntu60"])
 
