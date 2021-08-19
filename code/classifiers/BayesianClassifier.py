@@ -10,6 +10,8 @@ from shared.helpers import *
 from classifiers.ThreeLayerMLP import ThreeLayerMLP
 from classifiers.STGCN import STGCN
 from classifiers.CTRGCN import CTRGCN
+from classifiers.MSG3D import MSG3D
+from classifiers.SGN import SGN
 from datasets.dataloaders import *
 
 
@@ -17,13 +19,20 @@ class ExtendedBayesianClassifier(ActionClassifier):
     def __init__(self, args):
         super().__init__(args)
         args.bayesianTraining = True
-        self.trainloader, self.testloader = createDataLoader(args)
+        if args.baseClassifier == 'SGN':
+            self.trainloader, self.testloader = createDataLoader_sgn(args)
+        else:
+            self.trainloader, self.testloader = createDataLoader(args)
         if args.baseClassifier == '3layerMLP':
             self.classifier = ThreeLayerMLP(args)
         elif args.baseClassifier == 'STGCN':
             self.classifier = STGCN(args)
         elif args.baseClassifier == 'CTRGCN':
             self.classifier = CTRGCN(args)
+        elif args.baseClassifier == 'MSG3D':
+            self.classifier = MSG3D(args)
+        elif args.baseClassifier == 'SGN':
+            self.classifier = SGN(args)
 
         self.classifier.model.eval()
         self.retFolder = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/' + self.args.adTrainer + '/'
@@ -96,6 +105,9 @@ class ExtendedBayesianClassifier(ActionClassifier):
         misclassified = 0
         results = np.empty(len(self.classifier.testloader.dataset.rlabels))
         for v, (tx, ty) in enumerate(self.classifier.testloader):
+            if self.args.classifier == 'SGN' or self.args.baseClassifier == 'SGN':
+                tx = tx.to(device)
+                ty = ty.to(device)
             predY = self.modelEval(tx)
             predY = torch.argmax(predY, dim=1)
             results[v * self.args.batchSize:(v + 1) * self.args.batchSize] = predY.cpu()
@@ -116,6 +128,9 @@ class ExtendedBayesianClassifier(ActionClassifier):
         misclassified = 0
         results = np.empty(len(self.classifier.testloader.dataset.rlabels))
         for v, (tx, ty) in enumerate(self.classifier.testloader):
+            if self.args.classifier == 'SGN' or self.args.baseClassifier == 'SGN':
+                tx = tx.to(device)
+                ty = ty.to(device)
             pred = torch.argmax(self.modelEval(tx), dim=1)
             diff = (pred - ty) == 0
             results[v * self.args.batchSize:(v + 1) * self.args.batchSize] = diff.cpu()
