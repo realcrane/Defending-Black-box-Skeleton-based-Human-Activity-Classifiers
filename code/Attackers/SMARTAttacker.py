@@ -175,14 +175,14 @@ class SmartAttacker(ActionAttacker):
 
 
     def reshapeData(self, x, toNative=True):
+
         #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
-        if self.args.classifier != 'SGN' and self.args.baseClassifier != 'SGN':
-            if toNative:
-                x = x.permute(0, 2, 3, 1, 4)
-                x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
-            else:
-                x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
-                x = x.permute(0, 3, 1, 2, 4)
+        if toNative:
+            x = x.permute(0, 2, 3, 1, 4)
+            x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
+        else:
+            x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
+            x = x.permute(0, 3, 1, 2, 4)
         return x
     def attack(self):
 
@@ -204,9 +204,6 @@ class SmartAttacker(ActionAttacker):
         overallFoolRate = 0
         batchTotalNum = 0
         for batchNo, (tx, ty) in enumerate(self.classifier.trainloader):
-            if self.args.classifier == 'SGN' or self.args.baseClassifier == 'SGN':
-                tx = tx.to(device)
-                ty = ty.to(device)
             adData = tx.clone()
             adData.requires_grad = True
             minCl = np.PINF
