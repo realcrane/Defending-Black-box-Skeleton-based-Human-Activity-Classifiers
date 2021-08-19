@@ -7,7 +7,7 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import os
 import time
-
+from utils import utils as ut
 class EBMATrainer(AdversarialTrainer):
     def __init__(self, args):
         super().__init__(args)
@@ -173,13 +173,14 @@ class EBMATrainer(AdversarialTrainer):
         return x_tilde_k.detach()
 
     def reshapeData(self, x, toNative=True):
-        #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
-        if toNative:
-            x = x.permute(0, 2, 3, 1, 4)
-            x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
-        else:
-            x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
-            x = x.permute(0, 3, 1, 2, 4)
+        if self.args.classifier != 'SGN' and self.args.baseClassifier != 'SGN':
+            #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
+            if toNative:
+                x = x.permute(0, 2, 3, 1, 4)
+                x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
+            else:
+                x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
+                x = x.permute(0, 3, 1, 2, 4)
         return x
 
     def adversarialTrain(self):
@@ -196,6 +197,9 @@ class EBMATrainer(AdversarialTrainer):
         print(f"burn-in training {self.args.burnIn} epochs")
         for i in range(self.args.burnIn):
             for batch, (X, y) in enumerate(self.classifier.trainloader):
+                if self.args.classifier == 'SGN' or self.args.baseClassifier == 'SGN':
+                    X = X.to(device)
+                    y = y.to(device)
                 pred = self.modelEval(X)
                 loss = self.classifier.classLoss(pred, y)
                 # Backpropagation
@@ -211,6 +215,9 @@ class EBMATrainer(AdversarialTrainer):
             batchNum = 0
 
             for batch, (X, y) in enumerate(self.classifier.trainloader):
+                if self.args.classifier == 'SGN' or self.args.baseClassifier == 'SGN':
+                    X = X.to(device)
+                    y = y.to(device)
                 refBoneLengths = self.boneLengths(X)
                 batchNum += 1
 
@@ -278,6 +285,9 @@ class EBMATrainer(AdversarialTrainer):
             misclassified = 0
             self.classifier.model.eval()
             for v, (tx, ty) in enumerate(self.classifier.testloader):
+                if self.args.classifier == 'SGN' or self.args.baseClassifier == 'SGN':
+                    tx = tx.to(device)
+                    ty = ty.to(device)
                 # refBoneLengths = self.boneLengths(tx)
                 #
                 # # sample x and compute logP(X)
@@ -343,13 +353,21 @@ class EBMATrainer(AdversarialTrainer):
         bestClfLoss = [np.infty for i in range(self.args.bayesianModelNum)]
         bestValClfLoss = [np.infty for i in range(self.args.bayesianModelNum)]
         bestValClfAcc = [0 for i in range(self.args.bayesianModelNum)]
-        logger = SummaryWriter()
-
+        #logger = SummaryWriter()
+        logger = SummaryWriter(log_dir=self.retFolder+'run/')# save in specific path
+        log_folder = self.retFolder + 'log/' #log.txt
+        if not os.path.exists(log_folder):
+            os.makedirs(log_folder)
+        log = ut.create_logger(log_folder,'train',level='info')
+        ut.print_args(self.args,log)
         #burn-in for classifier
         print(f"burn-in training {self.args.burnIn} epochs")
         for i in range(self.args.burnIn):
             for m in range(self.args.bayesianModelNum):
                 for batch, (X, y) in enumerate(self.classifier.trainloader):
+                    if self.args.classifier == 'SGN' or self.args.baseClassifier == 'SGN':
+                        X = X.to(device)
+                        y = y.to(device)
                     pred = self.modelEval(X, m)
                     loss = self.classifier.classLoss(pred, y)
                     # Backpropagation
@@ -366,6 +384,9 @@ class EBMATrainer(AdversarialTrainer):
             for i in range(self.args.bayesianModelNum):
                 batchNum = 0
                 for batch, (X, y) in enumerate(self.classifier.trainloader):
+                    if self.args.classifier == 'SGN' or self.args.baseClassifier == 'SGN':
+                        X = X.to(device)
+                        y = y.to(device)
                     batchNum += 1
                     refBoneLengths = self.boneLengths(X)
 
@@ -402,27 +423,33 @@ class EBMATrainer(AdversarialTrainer):
                     self.classifier.optimiserList[i].step()
 
                     loss, current = loss.detach().item(), batch * len(X)
-                    print(f"epoch: {ep}/{self.args.epochs} model: {i} loss: {loss:>7f}  lossLogPX: {lossLogPX:>6f}, lossPXTildeXY: {lossPXTildeXY:>6f}, lossPYX: {lossPYX:>6f}"
-                          f"(logPX: {logPX:>6f} logPXSamples: {logPXSamples:>6f} lossPYXTilde: {lossPYXTilde:>7f} lossXXTilde: {lossXXTilde:>6f}) [{current:>5d}/{size:>5d}]")
-
+                    if batch % 10 == 0:
+                        # print(f"epoch: {ep}/{self.args.epochs} model: {i} loss: {loss:>7f}  lossLogPX: {lossLogPX:>6f}, lossPXTildeXY: {lossPXTildeXY:>6f}, lossPYX: {lossPYX:>6f}"
+                        #       f"(logPX: {logPX:>6f} logPXSamples: {logPXSamples:>6f} lossPYXTilde: {lossPYXTilde:>7f} lossXXTilde: {lossXXTilde:>6f}) [{current:>5d}/{size:>5d}]")
+                        log.info((f"epoch: {ep}/{self.args.epochs} model: {i} loss: {loss:>7f}  lossLogPX: {lossLogPX:>6f}, lossPXTildeXY: {lossPXTildeXY:>6f}, lossPYX: {lossPYX:>6f}"
+                              f"(logPX: {logPX:>6f} logPXSamples: {logPXSamples:>6f} lossPYXTilde: {lossPYXTilde:>7f} lossXXTilde: {lossXXTilde:>6f}) [{current:>5d}/{size:>5d}]"))
                 # save a model if the best training loss so far has been achieved.
                 epLoss[i] /= batchNum
                 epClfLoss[i] /= batchNum
                 logger.add_scalar(('Loss/train/model%d' % i), epLoss[i], ep)
                 logger.add_scalar(('Loss/train/clf/model%d' % i), epClfLoss[i], ep)
+                log.info('Loss %.3f/train %d/model %d' % (epLoss[i], ep, i))
+                log.info('Loss %.3f/train/clf %d/model %d' % (epClfLoss[i], ep, i))
                 if epLoss[i] < bestLoss[i]:
-                    print(f"epoch: {ep} model: {i} per epoch average training loss improves from: {bestLoss[i]} to {epLoss[i]}")
-                    # modelFile = self.retFolder + '/' + str(i) + '_minLossAppendedModel_adtrained_' + str(epLoss[i]) + '.pth'
-                    # torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
+                    #print(f"epoch: {ep} model: {i} per epoch average training loss improves from: {bestLoss[i]} to {epLoss[i]}")
+                    log.info(f"epoch: {ep} model: {i} per epoch average training loss improves from: {bestLoss[i]} to {epLoss[i]}")
+                    modelFile = self.retFolder + '/' + str(i) + '_minLossAppendedModel_adtrained.pth'
+                    torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
                     bestLoss[i] = epLoss[i]
 
                 if epClfLoss[i] < bestClfLoss[i]:
-                    print(f"epoch: {ep} model: {i} per epoch average training clf loss improves from: {bestClfLoss[i]} to {epClfLoss[i]}")
-                    #
+                    #print(f"epoch: {ep} model: {i} per epoch average training clf loss improves from: {bestClfLoss[i]} to {epClfLoss[i]}")
+                    log.info(f"epoch: {ep} model: {i} per epoch average training clf loss improves from: {bestClfLoss[i]} to {epClfLoss[i]}")
                     # modelFile = self.retFolder + '/' + str(i) + '_minLossAppendedModel_adtrained.pth'
                     # torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
                     bestClfLoss[i] = epClfLoss[i]
-            print(f"epoch: {ep} time elapsed: {(time.time() - startTime) / 3600 - valTime} hours")
+            #print(f"epoch: {ep} time elapsed: {(time.time() - startTime) / 3600 - valTime} hours")
+            log.info((f"epoch: {ep} time elapsed: {(time.time() - startTime) / 3600 - valTime} hours"))
             valStartTime = time.time()
             # run validation and save a model if the best validation loss so far has been achieved.
             valLoss = np.zeros(self.args.bayesianModelNum)
@@ -432,6 +459,9 @@ class EBMATrainer(AdversarialTrainer):
                 # vbatch = 0
                 misclassified = 0
                 for v, (tx, ty) in enumerate(self.classifier.testloader):
+                    if self.args.classifier == 'SGN' or self.args.baseClassifier == 'SGN':
+                        tx = tx.to(device)
+                        ty = ty.to(device)
                     # refBoneLengths = self.boneLengths(tx)
                     #
                     # # sample x and compute logP(X)
@@ -464,18 +494,21 @@ class EBMATrainer(AdversarialTrainer):
                     misclassified += torch.sum(diff)
 
                 valClfAcc = 1 - misclassified / len(self.classifier.testloader.dataset)
+                logger.add_scalar(('valClfAcc/model%d' % i), valClfAcc, ep)
+                log.info('valClfAcc %.3f/val %d/model %d' % (valClfAcc, ep, i))
                 # valLoss[i] /= vbatch
                 # valClfLoss[i] /= vbatch
                 # logger.add_scalar(('Loss/validation/model%d' % i), valLoss[i], ep)
                 # logger.add_scalar(('Loss/validation/clf/model%d' % i), valClfLoss[i], ep)
-                if valLoss[i] < bestValLoss[i]:
-                    print(f"epoch: {ep} model: {i} per epoch average validation loss improves from: {bestValLoss[i]} to {valLoss[i]}")
-                    #modelFile = self.retFolder + '/' + str(i) + '_minValLossAppendedModel_adtrained_' + str(valLoss[i]) + '.pth'
-                    #torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
-
-                    bestValLoss[i] = valLoss[i]
+                # if valLoss[i] < bestValLoss[i]:
+                #     print(f"epoch: {ep} model: {i} per epoch average validation loss improves from: {bestValLoss[i]} to {valLoss[i]}")
+                #     #modelFile = self.retFolder + '/' + str(i) + '_minValLossAppendedModel_adtrained_' + str(valLoss[i]) + '.pth'
+                #     #torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
+                #
+                #     bestValLoss[i] = valLoss[i]
                 if valClfAcc > bestValClfAcc[i]:
-                    print(f"epoch: {ep} model: {i} per epoch average clf validation acc improves from: {bestValClfLoss[i]} to {valClfAcc}")
+                    # print(f"epoch: {ep} model: {i} per epoch average clf validation acc improves from: {bestValClfLoss[i]} to {valClfAcc}")
+                    log.info(f"epoch: {ep} model: {i} per epoch average clf validation acc improves from: {bestValClfAcc[i]} to {valClfAcc}")
                     modelFile = self.retFolder + '/' + str(i) + '_minValLossAppendedModel_adtrained.pth'
                     torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
 
