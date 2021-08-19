@@ -13,7 +13,7 @@ def parameteSettingForOptimizers(ap):
 
     #STGCN uses SGD, with initial learning rate 0.1, the rest uses 0.001 and Adam
     ap.add_argument("-lr", "--learningRate", type=float, required=False, help="to specify an adversarial attacker",
-                    default=1e-4)
+                    default=1e-3)
 
 def parameteSettingForAttackers(ap):
 
