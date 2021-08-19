@@ -153,23 +153,23 @@ if __name__ == '__main__':
     #     trainedModelFile = 'minValLossModel.pth'
     #
     # )
-    ap.set_defaults(
-        classifier = 'SGN',
-        routine = 'attack',
-        attacker = 'CIASA',
-        attackType = 'ab',
-        trainedModelFile='minValLossModel.pth',
-        clippingThreshold=0.005,
-        dataset = 'hdm05',
-        trainFile = 'adClassTrain.npz',
-        testFile = 'classTest.npz',
-        dataPath = '../results/',
-        retPath = '../results/',
-        epochs = 500,
-        batchSize = 16,
-        classNum = 65,
-        learningRate = 1e-3
-    )
+    # ap.set_defaults(
+    #     classifier = 'SGN',
+    #     routine = 'attack',
+    #     attacker = 'CIASA',
+    #     attackType = 'ab',
+    #     trainedModelFile='minValLossModel.pth',
+    #     clippingThreshold=0.005,
+    #     dataset = 'hdm05',
+    #     trainFile = 'adClassTrain.npz',
+    #     testFile = 'classTest.npz',
+    #     dataPath = '../results/',
+    #     retPath = '../results/',
+    #     epochs = 500,
+    #     batchSize = 16,
+    #     classNum = 65,
+    #     learningRate = 1e-3
+    # )
     # ap.set_defaults(
     #     classifier = 'SGN',
     #     routine = 'adTrain',
