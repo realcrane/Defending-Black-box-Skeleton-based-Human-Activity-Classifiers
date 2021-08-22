@@ -26,7 +26,7 @@ class ExtendedBayesianClassifier(ActionClassifier):
             self.classifier = CTRGCN(args)
 
         self.classifier.model.eval()
-        self.retFolder = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/' + self.args.adTrainer + '/'
+        self.retFolder = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/' + self.args.baseClassifier + '/'
         self.createModel()
 
     def createModel(self):
@@ -124,7 +124,7 @@ class ExtendedBayesianClassifier(ActionClassifier):
         adLabels = self.classifier.testloader.dataset.rlabels[results.astype(bool)]
 
         print(f"{len(adLabels)} out of {len(results)} motions are collected")
-        path = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/'
+        path = self.retFolder
         if not os.path.exists(path):
             os.makedirs(path)
         np.savez_compressed(path + self.args.bayesianAdTrainFile, clips=adData, classes=adLabels)

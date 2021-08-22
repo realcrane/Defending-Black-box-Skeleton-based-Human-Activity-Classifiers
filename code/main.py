@@ -28,13 +28,13 @@ def parameteSettingForAttackers(ap):
     ap.add_argument("-ur", "--updateRule", type=str, required=False,
                     help="to specify the optimisation method for adversarial attack", default='gd')
     ap.add_argument("-cw", "--classWeight", type=float, required=False, help="to specify the weight for classification loss",
-                    default=0.6)
+                    default=0.9)
     ap.add_argument("-rw", "--reconWeight", type=float, required=False, help="to specify the weight for reconstruction loss",
                     default=0.4)
     ap.add_argument("-blw", "--boneLenWeight", type=float, required=False, help="to specify the weight for bone length loss",
                     default=0.7)
     ap.add_argument("-cp", "--clippingThreshold", type=float, required=False, help="set up the clipping threshold in update",
-                    default=0.005)
+                    default=0.01)
 
 
 def parameteSettingForAdTrainers(ap):
@@ -63,7 +63,6 @@ def parameteSettingForAdTrainers(ap):
     ap.add_argument("-bayesianAdTrainFile", "--bayesianAdTrainFile", type=str, required=False,
                     help="the file name of the correctly classified data samples from a bayesian AT for adversarial attack",
                     default='bayesianAdClassTrain.npz')
-
 
 def parameteSettingForClassifiers(ap):
 
@@ -103,8 +102,8 @@ def parameteSettingForClassifiers(ap):
                     default='spatial')
 
     # set up for ExtendedBayesian
-    ap.add_argument("-baseClassifier", "--baseClassifier", type=str, required=False, help="STGCN: the graph strategy",
-                    default='STGCN')
+    ap.add_argument("-baseClassifier", "--baseClassifier", type=str, required=False, help="the base classifier for the Bayesian Robust Classifier",
+                    default='')
 
 if __name__ == '__main__':
 

@@ -88,7 +88,10 @@ class CTRGCN(ActionClassifier):
 
         num_class = self.args.classNum
         num_point = 25
-        num_person = 2
+        if self.args.dataset == 'hdm05':
+            num_person = 1
+        elif self.args.dataset == 'ntu60' or self.args.dataset == 'ntu120':
+            num_person = 2
         graph = 'classifiers.ctrgcn.ntu_rgb_d.Graph'
         graph_args = dict([('labeling_mode:', 'spatial')])
         in_channels = 3
@@ -128,13 +131,15 @@ class CTRGCN(ActionClassifier):
         self.model.to(device)
     def configureOptimiser(self):
 
-        #self.optimiser = torch.optim.Adam(self.model.parameters(), lr=self.args.learningRate, weight_decay=0.0001)
-        self.optimiser = torch.optim.SGD(
-                self.model.parameters(),
-                lr=self.args.learningRate,
-                momentum=0.9,
-                nesterov=True,
-                weight_decay=0.0004)
+        if self.args.optimiser == 'Adam':
+            self.optimiser = torch.optim.Adam(self.model.parameters(), lr=self.args.learningRate, weight_decay=0.0001)
+        elif self.args.optimiser == 'SGD':
+            self.optimiser = torch.optim.SGD(
+                    self.model.parameters(),
+                    lr=self.args.learningRate,
+                    momentum=0.9,
+                    nesterov=True,
+                    weight_decay=0.0004)
 
     def adjustLearningRate(self, epoch):
 

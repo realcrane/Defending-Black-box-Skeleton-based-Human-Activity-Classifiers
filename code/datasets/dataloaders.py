@@ -17,7 +17,7 @@ def createDataLoader(args):
             else:
                 traindataset = CDataset(args)
 
-            trainloader = DataLoader(traindataset, batch_size=args.batchSize, shuffle=True)
+            trainloader = DataLoader(traindataset, batch_size=args.batchSize, shuffle=True, drop_last=False)
 
             ###further split the training data into training and validation
             # validation_split = .2
@@ -48,7 +48,7 @@ def createDataLoader(args):
                 else:
                     testdataset = CDataset(args)
                 args.routine = routine
-                testloader = DataLoader(testdataset, batch_size=args.batchSize, shuffle=False)
+                testloader = DataLoader(testdataset, batch_size=args.batchSize, shuffle=False, drop_last=False)
 
         elif args.routine == 'test' or args.routine == 'gatherCorrectPrediction' or args.routine == 'bayesianTest':
             if len(args.testFile):
@@ -56,14 +56,14 @@ def createDataLoader(args):
                     testdataset = NTUDataset(args)
                 else:
                     testdataset = CDataset(args)
-                testloader = DataLoader(testdataset, batch_size=args.batchSize, shuffle=False)
+                testloader = DataLoader(testdataset, batch_size=args.batchSize, shuffle=False, drop_last=False)
 
         elif args.routine == 'attack':
             if args.dataset == 'ntu60' or args.dataset == 'ntu120':
                 traindataset = NTUDataset(args)
             else:
                 traindataset = CDataset(args)
-            trainloader = DataLoader(traindataset, batch_size=args.batchSize, shuffle=False)
+            trainloader = DataLoader(traindataset, batch_size=args.batchSize, shuffle=False, drop_last=True)
     else:
         print ('No dataset is loaded in ThreeLayerMLPArgs')
 

@@ -10,7 +10,10 @@ class CDataset(Dataset):
         if args.routine == 'train' or args.routine == 'adTrain' or args.routine == 'bayesianTrain':
             data = np.load(args.dataPath + '/' + args.dataset + '/' + args.trainFile)
         elif args.routine == 'attack':
-            data = np.load(args.retPath + '/' + args.dataset + '/' + args.classifier + '/' + args.trainFile)
+            if len(args.baseClassifier) > 0:
+                data = np.load(args.retPath + '/' + args.dataset + '/' + args.classifier + '/' + args.baseClassifier + '/' + args.trainFile)
+            else:
+                data = np.load(args.retPath + '/' + args.dataset + '/' + args.classifier + '/' + args.trainFile)
         elif args.routine == 'test' or args.routine == 'gatherCorrectPrediction' or args.routine == 'bayesianTest':
             data = np.load(args.dataPath + '/' + args.dataset + '/' + args.testFile)
         else:

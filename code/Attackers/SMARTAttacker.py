@@ -28,7 +28,10 @@ class SmartAttacker(ActionAttacker):
         self.refBoneLengths = []
         self.optimizer = ''
         self.classifier = loadClassifier(args)
-        self.retFolder = self.args.retPath + self.args.dataset + '/' + self.args.classifier + '/' + self.name + '/'
+        if len(self.args.baseClassifier) > 0:
+            self.retFolder = self.args.retPath + self.args.dataset + '/' + self.args.classifier + '/' + self.args.baseClassifier + '/' + self.name + '/'
+        else:
+            self.retFolder = self.args.retPath + self.args.dataset + '/' + self.args.classifier + '/' + self.name + '/'
         if not os.path.exists(self.retFolder):
             os.makedirs(self.retFolder)
 

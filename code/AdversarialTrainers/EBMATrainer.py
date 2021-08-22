@@ -12,7 +12,7 @@ class EBMATrainer(AdversarialTrainer):
     def __init__(self, args):
         super().__init__(args)
         self.classifier = loadClassifier(args)
-        self.retFolder = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/' + self.args.adTrainer + '/'
+        self.retFolder = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/' + self.args.baseClassifier + '/'
         if args.bayesianTraining:
             self.replayBufferList = [[] for i in range(args.bayesianModelNum)]
         else:
