@@ -59,7 +59,7 @@ def parameteSettingForAdTrainers(ap):
 
     ap.add_argument("--bayesianTraining", type=bool, required=False, help="flag for Bayesian Adversarial Training", default=False)
     ap.add_argument("--bayesianModelNum", type=int, required=False, help="the number of model to train",
-                    default=1)
+                    default=5)
     ap.add_argument("-bayesianAdTrainFile", "--bayesianAdTrainFile", type=str, required=False,
                     help="the file name of the correctly classified data samples from a bayesian AT for adversarial attack",
                     default='bayesianAdClassTrain.npz')
