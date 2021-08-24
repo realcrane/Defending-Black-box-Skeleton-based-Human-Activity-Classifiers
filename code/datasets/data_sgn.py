@@ -1,23 +1,7 @@
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
 from Configuration import *
 from torch.utils.data import Dataset, DataLoader
-import os
 import torch
 import numpy as np
-import h5py
-import random
-import os.path as osp
-import sys
-from six.moves import xrange
-import math
-import scipy.misc
-if sys.version_info[0] == 2:
-    import cPickle as pickle
-else:
-    import pickle
-#from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
 
 
 class CDataset_SGN(Dataset):
