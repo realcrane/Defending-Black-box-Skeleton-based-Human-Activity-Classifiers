@@ -29,16 +29,11 @@ class SGN(ActionClassifier):
                 self.seg = seg
                 num_joint = 25
                 bs = args.batchSize
-                if args.routine == 'test' or args.routine == 'gatherCorrectPrediction' or 'bayesianTest':
-                    self.spa = self.one_hot(bs , num_joint, self.seg)
-                    self.spa = self.spa.permute(0, 3, 2, 1).cuda()
-                    self.tem = self.one_hot(bs , self.seg, num_joint)
-                    self.tem = self.tem.permute(0, 3, 1, 2).cuda()
-                else:
-                    self.spa = self.one_hot(bs, num_joint, self.seg)
-                    self.spa = self.spa.permute(0, 3, 2, 1).cuda()
-                    self.tem = self.one_hot(bs, self.seg, num_joint)
-                    self.tem = self.tem.permute(0, 3, 1, 2).cuda()
+
+                self.spa = self.one_hot(bs, num_joint, self.seg)
+                self.spa = self.spa.permute(0, 3, 2, 1).cuda()
+                self.tem = self.one_hot(bs, self.seg, num_joint)
+                self.tem = self.tem.permute(0, 3, 1, 2).cuda()
 
                 self.tem_embed = embed(self.seg, 64*4, norm=False, bias=bias)
                 self.spa_embed = embed(num_joint, 64, norm=False, bias=bias)
@@ -183,7 +178,6 @@ class SGN(ActionClassifier):
                 pred = self.model(X)
                 loss = self.classLoss(pred, y)
 
-
                 # Backpropagation
                 self.optimiser.zero_grad()
                 loss.backward()
@@ -233,52 +227,42 @@ class SGN(ActionClassifier):
     #further adversarial attack
 
 
-    def test(self):
-        self.model.eval()
-        if len(self.args.trainedModelFile) == 0 or self.testloader == '':
-            print('no pre-trained model to load')
-            return
-        label_output = list()
-        pred_output = list()
-        misclassified = 0
-        results = np.empty(len(self.testloader.dataset.rlabels))
-        with torch.no_grad():
-            for v, (tx, ty) in enumerate(self.testloader):
-                output = self.model(tx)
-                output = output.view((-1, tx.size(0)//ty.size(0), output.size(1)))
-                output = output.mean(1)
-                pred = torch.argmax(output, dim=1)
-                results[v * self.args.batchSize:(v + 1) * self.args.batchSize] = pred.cpu()
-                diff = (pred - ty) != 0
-                misclassified += torch.sum(diff)
+    # def test(self):
+    #     self.model.eval()
+    #     misclassified = 0
+    #     results = np.empty(len(self.testloader.dataset.rlabels))
+    #     for v, (tx, ty) in enumerate(self.testloader):
+    #         pred = torch.argmax(self.model(tx), dim=1)
+    #         results[v*self.args.batchSize:(v+1)*self.args.batchSize] = pred.cpu()
+    #         diff = (pred - ty) != 0
+    #         misclassified += torch.sum(diff)
+    #
+    #     acc = 1 - misclassified / len(self.testloader.dataset)
+    #
+    #     print(f"accuracy: {acc:>4f}")
+    #     np.savetxt(self.retFolder + 'testRets.txt', results)
+    #     np.savetxt(self.retFolder + 'testGroundTruth.txt', self.testloader.dataset.rlabels)
+    #
+    #     return acc
 
-        error = misclassified / len(self.testloader.dataset)
-        print(f"accuracy: {1 - error:>4f}")
-        np.savetxt(self.retFolder + 'testRets.txt', results)
-        np.savetxt(self.retFolder + 'testGroundTruth.txt', self.testloader.dataset.rlabels)
-
-        return 1 - error
-    def collectCorrectPredictions(self):
-        self.model.eval()
-
-        # collect data from the test data
-        misclassified = 0
-        results = np.empty(len(self.testloader.dataset.rlabels))
-        for v, (tx, ty) in enumerate(self.testloader):
-            output = self.model(tx)
-            output = output.view((-1, tx.size(0) // ty.size(0), output.size(1)))
-            output = output.mean(1)
-            pred = torch.argmax(output, dim=1)
-            diff = (pred - ty) == 0
-            results[v * self.args.batchSize:(v + 1) * self.args.batchSize] = diff.cpu()
-
-        adData = self.testloader.dataset.data[results.astype(bool)]
-        adLabels = self.testloader.dataset.rlabels[results.astype(bool)]
-
-        print(f"{len(adLabels)} out of {len(results)} motions are collected")
-
-        if not os.path.exists(self.retFolder):
-            os.mkdir(self.retFolder)
-        np.savez_compressed(self.retFolder+self.args.adTrainFile, clips=adData, classes=adLabels)
-
-        return len(adLabels)
+    # def collectCorrectPredictions(self):
+    #     self.model.eval()
+    #
+    #     # collect data from the test data
+    #     misclassified = 0
+    #     results = np.empty(len(self.testloader.dataset.rlabels))
+    #     for v, (tx, ty) in enumerate(self.testloader):
+    #         pred = torch.argmax(self.model(tx), dim=1)
+    #         diff = (pred - ty) == 0
+    #         results[v * self.args.batchSize:(v + 1) * self.args.batchSize] = diff.cpu()
+    #
+    #     adData = self.testloader.dataset.data[results.astype(bool)]
+    #     adLabels = self.testloader.dataset.rlabels[results.astype(bool)]
+    #
+    #     print(f"{len(adLabels)} out of {len(results)} motions are collected")
+    #
+    #     if not os.path.exists(self.retFolder):
+    #         os.mkdir(self.retFolder)
+    #     np.savez_compressed(self.retFolder+self.args.adTrainFile, clips=adData, classes=adLabels)
+    #
+    #     return len(adLabels)

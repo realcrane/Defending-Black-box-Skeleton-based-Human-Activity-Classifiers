@@ -19,27 +19,6 @@ def createDataLoader(args):
 
             trainloader = DataLoader(traindataset, batch_size=args.batchSize, shuffle=True, drop_last=False)
 
-            ###further split the training data into training and validation
-            # validation_split = .2
-            # random_seed = 42
-            # # Creating data indices for training and validation splits:
-            # dataset_size = len(traindataset)
-            # indices = list(range(dataset_size))
-            # split = int(np.floor(validation_split * dataset_size))
-            #
-            # np.random.seed(random_seed)
-            # np.random.shuffle(indices)
-            # train_indices, val_indices = indices[split:], indices[:split]
-            #
-            # # Creating PT data samplers and loaders:
-            # train_sampler = SubsetRandomSampler(train_indices)
-            # valid_sampler = SubsetRandomSampler(val_indices)
-            #
-            # trainloader = DataLoader(traindataset, batch_size=args.batchSize,
-            #                               sampler=train_sampler)
-            # validationloader = DataLoader(traindataset, batch_size=args.batchSize,
-            #                                    sampler=valid_sampler)
-
             if len(args.testFile):
                 routine = args.routine
                 args.routine = 'test'
@@ -79,10 +58,7 @@ def createDataLoader_sgn(args):
         if args.routine == 'train' or args.routine == 'adTrain' or args.routine == 'bayesianTrain':
             path_train = args.dataPath + '/' + args.dataset + '/' + args.trainFile
             path_val = args.dataPath + '/' + args.dataset + '/' + args.testFile
-            if args.adTrainer == 'EBMATrainer':
-                ntu_loaders = NTUDataLoaders(args=args, pt=path_train, pv=path_val, dataset=args.dataset,aug=0)  # 0:CS 1:CV
-            else:
-                ntu_loaders = NTUDataLoaders(args=args,pt=path_train,pv=path_val, dataset=args.dataset, aug=0)  # 0:CS 1:CV
+            ntu_loaders = NTUDataLoaders(args=args, pt=path_train, pv=path_val, dataset=args.dataset,aug=0)  # 0:CS 1:CV
             trainloader = ntu_loaders.get_train_loader(args.batchSize,0)
             if len(args.testFile):
                 testloader = ntu_loaders.get_val_loader(args.batchSize,0)
