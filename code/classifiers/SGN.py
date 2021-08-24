@@ -5,7 +5,6 @@ import numpy as np
 import os
 import torch
 from torch import nn
-import torch.nn.functional as F
 from shared.helpers import *
 from torch.utils.tensorboard import SummaryWriter
 import time
@@ -18,7 +17,7 @@ class SGN(ActionClassifier):
         self.createModel()
         self.steps = [60, 90, 110]
     def createModel(self):
-        #this is a wrapper of the original STGCN code, with minor modification on the input format
+        #this is a wrapper of the original SGN code
         class Classifier(nn.Module):
             def __init__(self, args, dataloader,seg=20,bias=True):
                 super().__init__()
@@ -127,10 +126,13 @@ class SGN(ActionClassifier):
                     self.model.load_state_dict(torch.load(self.args.retPath + self.args.dataset + '/' +
                                         self.args.baseClassifier + '/' + self.args.trainedModelFile))
                 else:
-                    # self.model.load_state_dict(
-                    #     torch.load(self.retFolder + self.args.adTrainer + '/' + self.args.trainedModelFile))
-                    self.model.load_state_dict(
-                        torch.load(self.retFolder + self.args.adTrainer + '/' + self.args.trainedModelFile,map_location='cuda:0'))
+                    if len(self.args.initWeightFile) > 0:
+                        self.model.load_state_dict(
+                            torch.load(self.retFolder + self.args.initWeightFile))
+                    else:
+                        self.model.load_state_dict(
+                            torch.load(self.retFolder + self.args.adTrainer + '/' + self.args.trainedModelFile))
+
         self.configureOptimiser()
         self.classificationLoss()
         self.model.to(device)
