@@ -173,14 +173,13 @@ class EBMATrainer(AdversarialTrainer):
         return x_tilde_k.detach()
 
     def reshapeData(self, x, toNative=True):
-        if self.args.classifier != 'SGN' and self.args.baseClassifier != 'SGN':
-            #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
-            if toNative:
-                x = x.permute(0, 2, 3, 1, 4)
-                x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
-            else:
-                x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
-                x = x.permute(0, 3, 1, 2, 4)
+        #ntu format is N, C, T, V, M (batch_no, channel, frame, node, person)
+        if toNative:
+            x = x.permute(0, 2, 3, 1, 4)
+            x = x.reshape((x.shape[0], x.shape[1], -1, x.shape[4]))
+        else:
+            x = x.reshape((x.shape[0], x.shape[1], -1, 3, x.shape[4]))
+            x = x.permute(0, 3, 1, 2, 4)
         return x
 
     def adversarialTrain(self):

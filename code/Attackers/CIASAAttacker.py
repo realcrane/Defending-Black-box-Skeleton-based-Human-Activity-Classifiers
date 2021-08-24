@@ -38,20 +38,14 @@ class CIASAAttacker(ActionAttacker):
         self.createDiscriminator()
         self.discriminator.to(device)
 
-        if self.args.classifier == 'SGN' or self.args.baseClassifier == 'SGN':
-            self.frameFeature = torch.zeros(
-                [self.args.batchSize * 20,
-                 len(self.classifier.trainloader.dataset.parents),
-                 len(self.classifier.trainloader.dataset.parents)])
-        else:
-            if self.args.dataset == 'hdm05':
-                self.frameFeature = torch.zeros([self.args.batchSize * self.classifier.trainloader.dataset.data.shape[1],
-                                                  len(self.classifier.trainloader.dataset.parents),
-                                                  len(self.classifier.trainloader.dataset.parents)])
-            elif self.args.dataset == 'ntu60' or self.args.dataset == 'ntu120':
-                self.frameFeature = torch.zeros([self.args.batchSize * self.classifier.trainloader.dataset.data.shape[2],
-                                                  len(self.classifier.trainloader.dataset.parents),
-                                                  len(self.classifier.trainloader.dataset.parents)])
+        if self.args.dataset == 'hdm05':
+            self.frameFeature = torch.zeros([self.args.batchSize * self.classifier.trainloader.dataset.data.shape[1],
+                                              len(self.classifier.trainloader.dataset.parents),
+                                              len(self.classifier.trainloader.dataset.parents)])
+        elif self.args.dataset == 'ntu60' or self.args.dataset == 'ntu120':
+            self.frameFeature = torch.zeros([self.args.batchSize * self.classifier.trainloader.dataset.data.shape[2],
+                                              len(self.classifier.trainloader.dataset.parents),
+                                              len(self.classifier.trainloader.dataset.parents)])
 
         # the joint weights are decided per joint, the spinal joints have higher weights.
         self.jointWeights = torch.Tensor([[[0.02, 0.02, 0.02, 0.02, 0.02,
@@ -284,23 +278,19 @@ class CIASAAttacker(ActionAttacker):
         overallFoolRate = 0
         batchTotalNum = 0
 
-        if self.args.classifier == 'SGN' or self.args.baseClassifier == 'SGN':
-            zeros = torch.zeros(self.classifier.args.batchSize * self.classifier.trainloader.dataset.data.shape[1],
+        if self.args.dataset == 'hdm05':
+            zeros = torch.zeros(self.classifier.args.batchSize*self.classifier.trainloader.dataset.data.shape[1], dtype = torch.int64).to(device)
+            ones = torch.ones(self.classifier.args.batchSize*self.classifier.trainloader.dataset.data.shape[1], dtype = torch.int64).to(device)
+        elif self.args.dataset == 'ntu60' or self.args.dataset == 'ntu120':
+            zeros = torch.zeros(self.classifier.args.batchSize * self.classifier.trainloader.dataset.data.shape[2],
                                 dtype=torch.int64).to(device)
-            ones = torch.ones(self.classifier.args.batchSize * self.classifier.trainloader.dataset.data.shape[1],
+            ones = torch.ones(self.classifier.args.batchSize * self.classifier.trainloader.dataset.data.shape[2],
                               dtype=torch.int64).to(device)
         else:
-            if self.args.dataset == 'hdm05':
-                zeros = torch.zeros(self.classifier.args.batchSize*self.classifier.trainloader.dataset.data.shape[1], dtype = torch.int64).to(device)
-                ones = torch.ones(self.classifier.args.batchSize*self.classifier.trainloader.dataset.data.shape[1], dtype = torch.int64).to(device)
-            elif self.args.dataset == 'ntu60' or self.args.dataset == 'ntu120':
-                zeros = torch.zeros(self.classifier.args.batchSize * self.classifier.trainloader.dataset.data.shape[2],
-                                    dtype=torch.int64).to(device)
-                ones = torch.ones(self.classifier.args.batchSize * self.classifier.trainloader.dataset.data.shape[2],
-                                  dtype=torch.int64).to(device)
-            else:
-                print ('unknown dataset for creating adversarial labels')
-                return
+            zeros = ''
+            ones = ''
+            print ('unknown dataset for creating adversarial labels')
+            return
         for batchNo, (tx, ty) in enumerate(self.classifier.trainloader):
             adData = tx.clone()
             adData.requires_grad = True
@@ -351,18 +341,18 @@ class CIASAAttacker(ActionAttacker):
                         boneLengths = self.boneLengths(convertedData)
                         percepLoss = self.perceptualLoss(convertedData, convertedAdData, boneLengths)
                         self.updateFeatureMap(convertedAdData)
-                        GANLoss = self.discriminator.loss(self.frameFeature.to(device), zeros) \
-                                  + self.discriminator.loss(self.frameFeature.to(device), ones)
+                        GANLoss = self.discriminator.loss(self.frameFeature, zeros) \
+                                  + self.discriminator.loss(self.frameFeature, ones)
                         self.updateFeatureMap(convertedData)
-                        GANLoss += self.discriminator.loss(self.frameFeature.to(device), ones)
+                        GANLoss += self.discriminator.loss(self.frameFeature, ones)
                 else:
                     boneLengths = self.boneLengths(tx)
                     percepLoss = self.perceptualLoss(tx, adData, boneLengths)
                     self.updateFeatureMap(adData)
-                    GANLoss = self.discriminator.loss(self.frameFeature.to(device), zeros) \
-                              + self.discriminator.loss(self.frameFeature.to(device), ones)
+                    GANLoss = self.discriminator.loss(self.frameFeature, zeros) \
+                              + self.discriminator.loss(self.frameFeature, ones)
                     self.updateFeatureMap(tx)
-                    GANLoss += self.discriminator.loss(self.frameFeature.to(device), ones)
+                    GANLoss += self.discriminator.loss(self.frameFeature, ones)
 
 
                 percepLoss = percepLoss + GANLoss

@@ -4,7 +4,6 @@ from classifiers.ActionClassifier import ClassifierArgs
 from classifiers.ThreeLayerMLP import ThreeLayerMLP
 from classifiers.STGCN import STGCN
 from classifiers.CTRGCN import CTRGCN
-from classifiers.SGN import SGN
 from classifiers.BayesianClassifier import ExtendedBayesianClassifier
 
 def loadClassifier(args):
@@ -17,8 +16,6 @@ def loadClassifier(args):
         classifier = CTRGCN(args)
     elif args.classifier == 'ExtendedBayesian':
         classifier = ExtendedBayesianClassifier(args)
-    elif args.classifier == 'SGN':
-        classifier = SGN(args)
     else:
         print('No classifier created')
 

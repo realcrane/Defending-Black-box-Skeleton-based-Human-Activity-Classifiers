@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 from datasets.CDataset import *
 import numpy as np
-from datasets.data_sgn import NTUDataLoaders
+
 
 def createDataLoader(args):
     trainloader = ''
@@ -48,6 +48,7 @@ def createDataLoader(args):
 
     return trainloader, testloader
 
+<<<<<<< HEAD
 def createDataLoader_sgn(args):
     trainloader = ''
     validationloader = ''
@@ -73,5 +74,6 @@ def createDataLoader_sgn(args):
                 testloader = ntu_loaders.get_val_loader(args.batchSize,0)
     else:
         print ('No dataset is loaded')
+=======
+>>>>>>> parent of 41f8526 (added SGN)
 
-    return trainloader, testloader
