@@ -74,6 +74,7 @@ class NTUDataLoaders(object):
             if len(pv):
                 self.val_set = NTUDataset_SGN(self.val_X, self.val_Y,args)
                 self.test_set = NTUDataset_SGN(self.test_X, self.test_Y,args)
+
     def get_train_loader(self, batch_size, num_workers,shuffle=True):
         if self.aug == 0:
             return DataLoader(self.train_set, batch_size=batch_size,
