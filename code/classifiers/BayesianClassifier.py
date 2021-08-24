@@ -10,6 +10,7 @@ from shared.helpers import *
 from classifiers.ThreeLayerMLP import ThreeLayerMLP
 from classifiers.STGCN import STGCN
 from classifiers.CTRGCN import CTRGCN
+from classifiers.SGN import SGN
 from datasets.dataloaders import *
 
 
@@ -17,13 +18,18 @@ class ExtendedBayesianClassifier(ActionClassifier):
     def __init__(self, args):
         super().__init__(args)
         args.bayesianTraining = True
-        self.trainloader, self.testloader = createDataLoader(args)
+        if args.baseClassifier == 'SGN':
+            self.trainloader, self.testloader = createDataLoader_sgn(args)
+        else:
+            self.trainloader, self.testloader = createDataLoader(args)
         if args.baseClassifier == '3layerMLP':
             self.classifier = ThreeLayerMLP(args)
         elif args.baseClassifier == 'STGCN':
             self.classifier = STGCN(args)
         elif args.baseClassifier == 'CTRGCN':
             self.classifier = CTRGCN(args)
+        elif args.baseClassifier == 'SGN':
+            self.classifier = SGN(args)
 
         self.classifier.model.eval()
         self.retFolder = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/' + self.args.baseClassifier + '/'
