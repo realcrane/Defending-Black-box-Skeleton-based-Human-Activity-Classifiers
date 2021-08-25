@@ -9,7 +9,7 @@ rm ./minLossModel_adtrained_* ./minValLossModel_adtrained_clf* ./minValLossModel
 python main.py -classifier 3layerMLP --routine train --dataset hdm05 --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65
 python main.py -classifier STGCN --routine train --dataset hdm05 --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65 -bs 128 -optimiser Adam
 python main.py -classifier CTRGCN --routine train --dataset hdm05 --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65 -bs 128 -optimiser Adam
-python main.py -classifier SGN --routine train --dataset hdm05 --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65 -bs 128 -optimiser Adam
+
 
 python main.py -classifier 3layerMLP --routine test --dataset hdm05 --testFile classTest.npz --trainedModelFile minValLossModel.pth --dataPath ../data/ -retPath ../results/ -cn 65
 python main.py -classifier STGCN --routine test --dataset hdm05 --testFile classTest.npz --trainedModelFile minValLossModel.pth --dataPath ../data/ -retPath ../results/ -cn 65
@@ -107,7 +107,7 @@ python main.py -classifier STGCN --routine gatherCorrectPrediction -adTrainer EB
 
 ###PT-bayesian adversarial train&test models on hdm05 using EBMATrainer
 python main.py -classifier ExtendedBayesian --baseClassifier STGCN --routine bayesianTrain --dataset ntu60 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 60 --trainedModelFile minValLossModel.pth
-python main.py -classifier ExtendedBayesian --baseClassifier CTRGCN --routine bayesianTrain --dataset ntu60 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 60 --trainedModelFile minValLossModel.pth -bs 16
+python main.py -classifier ExtendedBayesian --baseClassifier CTRGCN --routine bayesianTrain --dataset ntu60 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 60 --trainedModelFile minValLossModel.pth -bs 16 --bayesianModelNum 5
 
 
 python main.py -classifier ExtendedBayesian --baseClassifier STGCN  --routine bayesianTest --dataset ntu60 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 60 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth

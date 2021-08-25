@@ -37,12 +37,14 @@ class ExtendedBayesianClassifier(ActionClassifier):
                 self.model = torch.nn.Sequential(
                     torch.nn.Linear(self.classifier.args.classNum, self.classifier.args.classNum),
                     torch.nn.Linear(self.classifier.args.classNum, self.classifier.args.classNum),
-                    torch.nn.ReLU()
+                    #torch.nn.Sigmoid()
+                    #torch.nn.Relu() #seems okay with hdm05
                 )
             def forward(self, x):
-                x = torch.nn.ReLU()(self.classifier.model(x))
+                #x = torch.nn.Relu()(self.classifier.model(x)) # seems okay with hdm05
+                #x = torch.nn.Sigmoid()(self.classifier.model(x))
                 logits = self.model(x)
-                logits = x + logits
+                logits = torch.nn.Sigmoid()(x + logits)
                 return logits
 
 
