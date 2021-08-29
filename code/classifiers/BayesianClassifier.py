@@ -37,14 +37,11 @@ class ExtendedBayesianClassifier(ActionClassifier):
                 self.model = torch.nn.Sequential(
                     torch.nn.Linear(self.classifier.args.classNum, self.classifier.args.classNum),
                     torch.nn.Linear(self.classifier.args.classNum, self.classifier.args.classNum),
-                    torch.nn.Sigmoid()
-                    #torch.nn.Relu() #seems okay with hdm05
+                    torch.nn.ReLU()
                 )
             def forward(self, x):
-                #x = torch.nn.Relu()(self.classifier.model(x)) # seems okay with hdm05
-                x = torch.nn.Sigmoid()(self.classifier.model(x))
+                x = torch.nn.ReLU()(self.classifier.model(x))
                 logits = self.model(x)
-                #logits = torch.nn.Sigmoid()(x + logits)
                 logits = x + logits
                 return logits
 
@@ -83,14 +80,19 @@ class ExtendedBayesianClassifier(ActionClassifier):
 
         self.classLoss = torch.nn.CrossEntropyLoss()
 
-    def setTrain(self):
-        for model in self.modelList:
-            model.model.train()
+    def setTrain(self, modelNo = -1):
+        if modelNo == -1:
+            for model in self.modelList:
+                model.model.train()
+        else:
+            self.modelList[modelNo].train()
 
-    def setEval(self):
-        for model in self.modelList:
-            model.model.eval()
-
+    def setEval(self, modelNo = -1):
+        if modelNo == -1:
+            for model in self.modelList:
+                model.model.eval()
+        else:
+            self.modelList[modelNo].eval()
     # train does nothing here as this classifier can only be trained in the EBMATrainer
     def train(self):
         return

@@ -287,8 +287,6 @@ class CIASAAttacker(ActionAttacker):
             ones = torch.ones(self.classifier.args.batchSize * self.classifier.trainloader.dataset.data.shape[2],
                               dtype=torch.int64).to(device)
         else:
-            zeros = ''
-            ones = ''
             print ('unknown dataset for creating adversarial labels')
             return
         for batchNo, (tx, ty) in enumerate(self.classifier.trainloader):
@@ -366,7 +364,7 @@ class CIASAAttacker(ActionAttacker):
                 self.discriminator.optimiser.step()
 
                 if ep % 50 == 0:
-                    print(f"Iteration {ep}/{self.classifier.args.epochs}, batchNo {batchNo}: Class Loss {classLoss:>9f}, Perceptual Loss: {percepLoss:>9f}")
+                    print(f"Iteration {ep}/{self.classifier.args.epochs}, batchNo {batchNo}/{int(len(self.classifier.trainloader.dataset) / self.args.batchSize)}: Class Loss {classLoss:>9f}, Perceptual Loss: {percepLoss:>9f}")
 
                 if self.attackType == 'ab':
                     foolRate = self.foolRateCal(ty, predictedLabels)
