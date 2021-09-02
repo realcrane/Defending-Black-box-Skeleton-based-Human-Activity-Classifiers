@@ -13,7 +13,7 @@ def parameteSettingForOptimizers(ap):
 
     #STGCN uses SGD, with initial learning rate 0.1, the rest uses 0.001 and Adam
     ap.add_argument("-lr", "--learningRate", type=float, required=False, help="to specify an adversarial attacker",
-                    default=1e-4)
+                    default=5e-1)
 
 def parameteSettingForAttackers(ap):
 
@@ -28,7 +28,7 @@ def parameteSettingForAttackers(ap):
     ap.add_argument("-ur", "--updateRule", type=str, required=False,
                     help="to specify the optimisation method for adversarial attack", default='gd')
     ap.add_argument("-cw", "--classWeight", type=float, required=False, help="to specify the weight for classification loss",
-                    default=0.9)
+                    default=0.6)
     ap.add_argument("-rw", "--reconWeight", type=float, required=False, help="to specify the weight for reconstruction loss",
                     default=0.4)
     ap.add_argument("-blw", "--boneLenWeight", type=float, required=False, help="to specify the weight for bone length loss",
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     ap.add_argument("-classifier", "--classifier", type=str, required=True, help="choose the classifier to train/test/attack",
                     choices=["3layerMLP", "STGCN", "ExtendedBayesian", "CTRGCN"])
     ap.add_argument("-dataset", "--dataset", type=str, required=True, help="choose the dataset",
-                    choices=["hdm05", "ntu60"])
+                    choices=["hdm05", "ntu60", "ntu120"])
 
     parameteSettingForOptimizers(ap)
     parameteSettingForClassifiers(ap)

@@ -17,7 +17,7 @@ class CTRGCN(ActionClassifier):
         super().__init__(args)
         self.trainloader, self.testloader = createDataLoader(args)
         self.createModel()
-        self.steps = [35, 55]
+        self.steps = [45, 65, 85]
         self.warmUpEpoch = 5
     def createModel(self):
         class Classifier(nn.Module):
