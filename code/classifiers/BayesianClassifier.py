@@ -17,6 +17,7 @@ class ExtendedBayesianClassifier(ActionClassifier):
     def __init__(self, args):
         super().__init__(args)
         args.bayesianTraining = True
+
         self.trainloader, self.testloader = createDataLoader(args)
         if args.baseClassifier == '3layerMLP':
             self.classifier = ThreeLayerMLP(args)
@@ -60,7 +61,7 @@ class ExtendedBayesianClassifier(ActionClassifier):
         self.classificationLoss()
     def configureOptimiser(self):
 
-        self.optimiserList = [SGAdaHMC(self.modelList[i].model.parameters(), config=dict(lr=self.args.learningRate, alpha=0, gamma=0.01, L=15, T=1e-5, tao=2, C=1))
+        self.optimiserList = [SGAdaHMC(self.modelList[i].model.parameters(), config=dict(lr=self.args.learningRate, alpha=0, gamma=0.01, L=30, T=1e-5, tao=2, C=1))
                               for i in range(self.args.bayesianModelNum)]
 
     def classificationLoss(self):
