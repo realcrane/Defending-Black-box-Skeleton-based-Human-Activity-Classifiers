@@ -11,7 +11,9 @@ import time
 class EBMATrainer(AdversarialTrainer):
     def __init__(self, args):
         super().__init__(args)
+
         self.classifier = loadClassifier(args)
+
         self.retFolder = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/' + self.args.baseClassifier + '/'
         if args.bayesianTraining:
             self.replayBufferList = [[] for i in range(args.bayesianModelNum)]
@@ -26,6 +28,7 @@ class EBMATrainer(AdversarialTrainer):
             os.makedirs(self.retFolder)
 
         self.configureOptimiser()
+
     def configureOptimiser(self):
 
         if not self.args.bayesianTraining:
@@ -404,8 +407,8 @@ class EBMATrainer(AdversarialTrainer):
 
                     if (batchNum - 1) % 20 == 0:
                         loss, current = loss.detach().item(), batch * len(X)
-                        print(f"epoch: {ep}/{self.args.epochs} model: {i} loss: {loss:>7f}  lossLogPX: {lossLogPX:>6f}, lossPXTildeXY: {lossPXTildeXY:>6f}, lossPYX: {lossPYX:>6f}"
-                              f"(logPX: {logPX:>6f} logPXSamples: {logPXSamples:>6f} lossPYXTilde: {lossPYXTilde:>7f} lossXXTilde: {lossXXTilde:>6f}) [{current:>5d}/{size:>5d}]")
+                        print(f"epoch: {ep}/{self.args.epochs} model: {i} loss: {loss:>7f}  lossLogPX: {lossLogPX:>6f}, lossPXTildeXY: {lossPXTildeXY:>6f}, lossPYX: {lossPYX:>6f} [{current:>5d}/{size:>5d}]")
+                        print(f"epoch: {ep}/{self.args.epochs} model: {i} (logPX: {logPX:>6f} logPXSamples: {logPXSamples:>6f} lossPYXTilde: {lossPYXTilde:>7f} lossXXTilde: {lossXXTilde:>6f}) [{current:>5d}/{size:>5d}]")
 
                 # save a model if the best training loss so far has been achieved.
                 epLoss[i] /= batchNum
@@ -427,8 +430,8 @@ class EBMATrainer(AdversarialTrainer):
 
                 valStartTime = time.time()
                 # run validation and save a model if the best validation loss so far has been achieved.
-                valLoss = np.zeros(self.args.bayesianModelNum)
-                valClfLoss = np.zeros(self.args.bayesianModelNum)
+                #valLoss = np.zeros(self.args.bayesianModelNum)
+                #valClfLoss = np.zeros(self.args.bayesianModelNum)
                 self.classifier.setEval(modelNo = i)
 
                 misclassified = 0
@@ -442,14 +445,14 @@ class EBMATrainer(AdversarialTrainer):
                 # valClfLoss[i] /= vbatch
                 # logger.add_scalar(('Loss/validation/model%d' % i), valLoss[i], ep)
                 # logger.add_scalar(('Loss/validation/clf/model%d' % i), valClfLoss[i], ep)
-                if valLoss[i] < bestValLoss[i]:
-                    print(f"epoch: {ep} model: {i} per epoch average validation loss improves from: {bestValLoss[i]} to {valLoss[i]}")
+                #if valLoss[i] < bestValLoss[i]:
+                    #print(f"epoch: {ep} model: {i} per epoch average validation loss improves from: {bestValLoss[i]} to {valLoss[i]}")
                     # modelFile = self.retFolder + '/' + str(i) + '_minValLossAppendedModel_adtrained_' + str(valLoss[i]) + '.pth'
                     # torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
 
-                    bestValLoss[i] = valLoss[i]
+                    #bestValLoss[i] = valLoss[i]
                 if valClfAcc > bestValClfAcc[i]:
-                    print(f"epoch: {ep} model: {i} per epoch average clf validation acc improves from: {bestValClfLoss[i]} to {valClfAcc}")
+                    print(f"epoch: {ep} model: {i} per epoch average clf validation acc improves from: {bestValClfAcc[i]} to {valClfAcc}")
                     modelFile = self.retFolder + '/' + str(i) + '_minValLossAppendedModel_adtrained.pth'
                     torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
                     bestValClfAcc[i] = valClfAcc
