@@ -50,10 +50,10 @@ def parameteSettingForAdTrainers(ap):
     ap.add_argument("--sgldLr", type=float, required=False, help="the learning rate of SGLD",default=2)
     ap.add_argument("--sgldStd", type=float, required=False, help="the standard deviation of the noise in SGLD",default=5e-3)
     ap.add_argument("--bufferSamples", type=str, required=False, help="buffered data sample file", default='')
-    ap.add_argument("--perturbThreshold", type=float, required=False, help="perturbation threshold during p(x_tilde|x)", default=5e-2)
-    ap.add_argument("--xWeight", type=float, required=False, help="weight for logp(x)", default=0.01)
+    ap.add_argument("--perturbThreshold", type=float, required=False, help="perturbation threshold during p(x_tilde|x)", default=1e-1)
+    ap.add_argument("--xWeight", type=float, required=False, help="weight for logp(x)", default=0.1)
     ap.add_argument("--clfWeight", type=float, required=False, help="weight for logp(y|x)", default=1)
-    ap.add_argument("--xTildeWeight", type=float, required=False, help="weight for logp(x_tilde|x, y)", default=0.005)
+    ap.add_argument("--xTildeWeight", type=float, required=False, help="weight for logp(x_tilde|x, y)", default=0.1)
     ap.add_argument("--initWeightFile", type=str, required=False, help="the network weights for initialization", default='')
 
     ap.add_argument("--bayesianTraining", type=bool, required=False, help="flag for Bayesian Adversarial Training", default=False)

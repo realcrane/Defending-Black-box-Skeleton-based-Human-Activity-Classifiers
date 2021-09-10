@@ -86,6 +86,9 @@ class STGCN(ActionClassifier):
                 # fcn for prediction
                 self.fcn = nn.Conv2d(256, num_class, kernel_size=1)
 
+                self.features = ''
+                self.featureSize = 256
+
             def forward(self, x):
                 # #our data is [batch_size, num_of_frames, dofs]
                 # #so we first convert our data into the format STGCN uses
@@ -111,6 +114,8 @@ class STGCN(ActionClassifier):
                 # global pooling
                 x = F.avg_pool2d(x, x.size()[2:])
                 x = x.view(N, M, -1, 1, 1).mean(dim=1)
+
+                self.features = x
 
                 # prediction
                 x = self.fcn(x)

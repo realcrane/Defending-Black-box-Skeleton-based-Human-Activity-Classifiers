@@ -57,6 +57,9 @@ class CTRGCN(ActionClassifier):
                 else:
                     self.drop_out = lambda x: x
 
+                self.features = ''
+                self.featureSize = base_channel * 4
+
             def forward(self, x):
                 if len(x.shape) == 3:
                     N, T, VC = x.shape
@@ -83,6 +86,7 @@ class CTRGCN(ActionClassifier):
                 x = x.mean(3).mean(1)
                 x = self.drop_out(x)
 
+                self.features = x
                 return self.fc(x)
 
         num_class = self.args.classNum

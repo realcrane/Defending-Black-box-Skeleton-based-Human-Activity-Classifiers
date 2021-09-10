@@ -26,7 +26,7 @@ class ExtendedBayesianClassifier(ActionClassifier):
         elif args.baseClassifier == 'CTRGCN':
             self.classifier = CTRGCN(args)
 
-        self.classifier.model.eval()
+        self.classifier.setEval()
         self.retFolder = self.args.retPath + '/' + self.args.dataset + '/' + self.args.classifier + '/' + self.args.baseClassifier + '/'
         self.createModel()
 
@@ -36,13 +36,15 @@ class ExtendedBayesianClassifier(ActionClassifier):
                 super().__init__()
                 self.classifier = classifier
                 self.model = torch.nn.Sequential(
-                    torch.nn.Linear(self.classifier.args.classNum, self.classifier.args.classNum),
+                    torch.nn.Linear(self.classifier.model.featureSize, self.classifier.args.classNum),
+                    #torch.nn.Linear(self.classifier.args.classNum, self.classifier.args.classNum),
                     torch.nn.Linear(self.classifier.args.classNum, self.classifier.args.classNum),
                     torch.nn.ReLU()
                 )
             def forward(self, x):
                 x = torch.nn.ReLU()(self.classifier.model(x))
-                logits = self.model(x)
+                logits = self.model(torch.flatten(self.classifier.model.features, start_dim=1))
+                #logits = self.model(x)
                 logits = x + logits
                 return logits
 
