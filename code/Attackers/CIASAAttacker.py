@@ -262,18 +262,6 @@ class CIASAAttacker(ActionAttacker):
 
         self.classifier.setEval()
 
-        #set up the attack labels based on the attack type
-        labels = self.classifier.trainloader.dataset.labels
-        if self.attackType == 'abn':
-            flabels = self.unspecificAttack(labels).to(device)
-        elif self.attackType == 'sa':
-            flabels = self.specifiedAttack(labels).to(device)
-            oflabels = np.argmax(flabels, axis=-1)
-        elif self.attackType == 'ab':
-            flabels = self.abAttack(labels).to(device)
-        else:
-            print('specified targetted attack, no implemented')
-            return
 
         overallFoolRate = 0
         batchTotalNum = 0
@@ -290,6 +278,19 @@ class CIASAAttacker(ActionAttacker):
             print ('unknown dataset for creating adversarial labels')
             return
         for batchNo, (tx, ty) in enumerate(self.classifier.trainloader):
+            # set up the attack labels based on the attack type
+            labels = ty
+            if self.attackType == 'abn':
+                flabels = self.unspecificAttack(labels).to(device)
+            elif self.attackType == 'sa':
+                flabels = self.specifiedAttack(labels).to(device)
+                oflabels = np.argmax(flabels, axis=-1)
+            elif self.attackType == 'ab':
+                flabels = self.abAttack(labels).to(device)
+            else:
+                print('specified targetted attack, no implemented')
+                return
+
             adData = tx.clone()
             adData.requires_grad = True
             minCl = np.PINF
@@ -305,11 +306,11 @@ class CIASAAttacker(ActionAttacker):
                 # computer the classfication loss gradient
 
                 if self.attackType == 'ab':
-                    classLoss = -torch.nn.CrossEntropyLoss()(pred, flabels[batchNo*self.classifier.args.batchSize:(batchNo+1)*self.classifier.args.batchSize])
+                    classLoss = -torch.nn.CrossEntropyLoss()(pred, flabels)
                 elif self.attackType == 'abn':
-                    classLoss = torch.mean((pred - flabels[batchNo*self.classifier.args.batchSize:(batchNo+1)*self.classifier.args.batchSize])**2)
+                    classLoss = torch.mean((pred - flabels)**2)
                 else:
-                    classLoss = torch.nn.CrossEntropyLoss()(pred, flabels[batchNo*self.classifier.args.batchSize:(batchNo+1)*self.classifier.args.batchSize])
+                    classLoss = torch.nn.CrossEntropyLoss()(pred, flabels)
 
                 adData.grad = None
                 classLoss.backward(retain_graph=True)
@@ -371,7 +372,7 @@ class CIASAAttacker(ActionAttacker):
                 elif self.attackType == 'abn':
                     foolRate = self.foolRateCal(ty, predictedLabels, pred)
                 elif self.attackType == 'sa':
-                    cFlabels = flabels[batchNo * self.classifier.args.batchSize:(batchNo + 1) * self.classifier.args.batchSize]
+                    cFlabels = flabels
                     foolRate = self.foolRateCal(cFlabels, predictedLabels)
                 else:
                     print('specified targetted attack, no implemented')

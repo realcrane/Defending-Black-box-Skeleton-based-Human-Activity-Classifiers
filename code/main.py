@@ -80,7 +80,7 @@ def parameteSettingForClassifiers(ap):
                     help="the pre-trained appended model weight file, under --retPath", default='')
 
     ap.add_argument("-ep", "--epochs", type=int, required=False, help="to specify the number of epochs for training",
-                    default=80)
+                    default=100)
     ap.add_argument("-cn", "--classNum", type=int, required=True, help="to specify the number of classes")
     ap.add_argument("-bs", "--batchSize", type=int, required=False, help="to specify the number of classes",
                     default=32)

@@ -42,14 +42,10 @@ def createDataLoader(args):
         elif args.routine == 'attack':
             if args.dataset == 'ntu60' or args.dataset == 'ntu120':
                 traindataset = NTUDataset(args)
-                # indices = list(range(len(traindataset)))
-                # trainDataSampler = SubsetRandomSampler(indices)
-                # trainloader = DataLoader(traindataset, batch_size=args.batchSize, shuffle=False, drop_last=True,
-                #                         sampler=trainDataSampler)
-                trainloader = DataLoader(traindataset, batch_size=args.batchSize, shuffle=False, drop_last=True)
             else:
                 traindataset = CDataset(args)
-                trainloader = DataLoader(traindataset, batch_size=args.batchSize, shuffle=False, drop_last=True)
+
+            trainloader = DataLoader(traindataset, batch_size=args.batchSize, shuffle=True, drop_last=True)
 
     else:
         print ('No dataset is loaded in ThreeLayerMLPArgs')
