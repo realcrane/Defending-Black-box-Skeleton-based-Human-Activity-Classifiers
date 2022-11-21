@@ -61,8 +61,8 @@ The code has not been exhaustively tested. You need to run it at your own risk. 
 * Then you can repeat the above train/testing/sampleGathering using BEAT on your trained classifier:
     ```
     python main.py -classifier ExtendedBayesian --baseClassifier 3layerMLP --routine bayesianTrain --dataset hdm05 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 20 -cn 65 --trainedModelFile minValLossModel.pth --bayesianModelNum 5
-    python main.py -classifier ExtendedBayesian --baseClassifier 3layerMLP  --routine bayesianTest --dataset hdm05 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 20 -cn 65 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth --bayesianModelNum 1
-    python main.py -classifier ExtendedBayesian --baseClassifier 3layerMLP  --routine gatherCorrectPrediction --dataset hdm05 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth --bayesianModelNum 1
+    python main.py -classifier ExtendedBayesian --baseClassifier 3layerMLP  --routine bayesianTest --dataset hdm05 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 20 -cn 65 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth --bayesianModelNum 5
+    python main.py -classifier ExtendedBayesian --baseClassifier 3layerMLP  --routine gatherCorrectPrediction --dataset hdm05 -adTrainer EBMATrainer --trainFile classTrain.npz --testFile classTest.npz --dataPath ../data/ --retPath ../results/ -ep 200 -cn 65 --trainedModelFile minValLossModel.pth --trainedAppendedModelFile minValLossAppendedModel_adtrained.pth --bayesianModelNum 5
 
     ```
 
