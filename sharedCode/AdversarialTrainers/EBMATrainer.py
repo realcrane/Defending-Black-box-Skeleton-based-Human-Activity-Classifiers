@@ -55,9 +55,7 @@ class EBMATrainer(AdversarialTrainer):
             return self.initRandom(X), []
         self.args.bufferSize = len(replayBuffer) if y is None else len(replayBuffer)
         inds = torch.randint(0, self.args.bufferSize, (self.args.batchSize,))
-        # if cond, convert inds to class conditional inds
-        # if y is not None:
-        #     inds = y.cpu() * self.args.bufferSize + inds
+
         bufferSamples = replayBuffer[inds]
         randomSamples = self.initRandom(X)
         choose_random = (torch.rand(self.args.batchSize) < self.args.reinitFreq).float()[:, None, None]
@@ -71,14 +69,14 @@ class EBMATrainer(AdversarialTrainer):
             replayBuffer = self.replayBufferList[rb]
         if not self.args.bayesianTraining:
             self.classifier.model.eval()
-        # get batch size
-        bs = self.args.batchSize if y is None else y.size(0)
+        # # get batch size
+        # bs = self.args.batchSize if y is None else y.size(0)
         # generate initial samples and buffer inds of those samples (if buffer is used)
         initSample, bufferInds = self.sampleP0(X, rb)
         x_k = torch.autograd.Variable(initSample, requires_grad=True).to(device)
         # sgld
         for k in range(self.args.samplingStep):
-            f_prime = torch.autograd.grad(torch.logsumexp(self.modelEval(x_k, rb), 0).sum(), [x_k], retain_graph=True)[0]
+            f_prime = torch.autograd.grad(torch.logsumexp(self.modelEval(x_k), 0).sum(), [x_k], retain_graph=True)[0]
             x_k.data += self.args.sgldLr * f_prime + np.sqrt(self.args.sgldLr*2) * self.args.sgldStd * torch.randn_like(x_k)
         if not self.args.bayesianTraining:
             self.classifier.model.train()
@@ -117,9 +115,6 @@ class EBMATrainer(AdversarialTrainer):
         #bone length loss
         boneLengths = self.boneLengths(xTilde)
 
-        # boneLengthsLoss = torch.mean(
-        #     torch.sum(torch.sum(torch.square(boneLengths - refBoneLengths), axis=-1), axis=-1))
-
         boneLengthsLoss = torch.nn.functional.mse_loss(boneLengths, refBoneLengths)
 
         x_k = self.reshapeData(x_k)
@@ -154,12 +149,10 @@ class EBMATrainer(AdversarialTrainer):
 
         return -(loss + beta * loss_motion)
 
-    def sampleXTilde(self, x, y, refBoneLengths, modelNo=-1):
+    def sampleXTilde(self, x, y, refBoneLengths):
         if not self.args.bayesianTraining:
             self.classifier.model.eval()
         # based on data x, generate perturbed data x_tilde
-        # import time
-        # start_time = time.time()
         if self.args.perturbThreshold > 0:
             xTilde = x.cpu() + np.random.uniform(-self.args.perturbThreshold, self.args.perturbThreshold, x.shape).astype('float32')
         else:
@@ -167,7 +160,7 @@ class EBMATrainer(AdversarialTrainer):
 
         x_tilde_k = torch.autograd.Variable(xTilde, requires_grad=True).to(device)
         for k in range(self.args.samplingStep):
-            f_prime = torch.autograd.grad(self.log_xTilde_x(x, x_tilde_k, y, self.args.drvWeight, refBoneLengths,3,modelNo = modelNo), [x_tilde_k], retain_graph=True)[0]
+            f_prime = torch.autograd.grad(self.log_xTilde_x(x, x_tilde_k, y, self.args.drvWeight, refBoneLengths), [x_tilde_k], retain_graph=True)[0]
             x_tilde_k.data += self.args.sgldLr * f_prime + np.sqrt(self.args.sgldLr*2) * self.args.sgldStd * torch.randn_like(x_tilde_k)
 
         if not self.args.bayesianTraining:
@@ -190,7 +183,6 @@ class EBMATrainer(AdversarialTrainer):
         size = len(self.classifier.trainloader.dataset)
 
         bestLoss = np.infty
-        bestValLoss = np.infty
         bestClfLoss = np.infty
         bestValClfAcc = 0
         logger = SummaryWriter()
@@ -219,7 +211,6 @@ class EBMATrainer(AdversarialTrainer):
 
 
                 # sample x and compute logP(X)
-                # ySamples = torch.randint(0, self.args.classNum, (self.args.batchSize,))
 
                 XSamples = self.sampleX(X)
 
@@ -262,73 +253,25 @@ class EBMATrainer(AdversarialTrainer):
             logger.add_scalar('Loss/train/clf', epClfLoss, ep)
             if epLoss < bestLoss:
                 print(f"epoch: {ep} per epoch average training loss improves from: {bestLoss} to {epLoss}")
-                #modelFile = self.retFolder + '/minLossModel_adtrained_' + str(epLoss) + '.pth'
-                # modelFile = self.retFolder + '/minLossModel_adtrained.pth'
-                # torch.save(self.classifier.model.state_dict(), modelFile)
                 bestLoss = epLoss
 
 
             if epClfLoss < bestClfLoss:
                 print(f"epoch: {ep} per epoch average training clf loss improves from: {bestClfLoss} to {epClfLoss}")
-                # modelFile = self.retFolder + '/minLossModel_adtrained.pth'
-                # torch.save(self.classifier.model.state_dict(), modelFile)
                 bestClfLoss = epClfLoss
             print(f"epoch: {ep} time elapsed: {(time.time() - startTime) / 3600 - valTime} hours")
             # run validation and save a model if the best validation loss so far has been achieved.
             valStartTime = time.time()
-            #valLoss = 0
-            #valClfLoss = 0
-            vbatch = 0
+
             misclassified = 0
             self.classifier.model.eval()
             for v, (tx, ty) in enumerate(self.classifier.testloader):
-                # refBoneLengths = self.boneLengths(tx)
-                #
-                # # sample x and compute logP(X)
-                # ySamples = torch.randint(0, self.args.classNum, (self.args.batchSize,))
-                # XSamples = self.sampleX()
-                #
-                # logPX = self.modelEval(tx).mean()
-                # logPXSamples = self.modelEval(XSamples).mean()
-                #
-                # lossLogPX = -(logPX-logPXSamples)
-                #
-                # # compute logP(x_tilde|X, y)
-                #
-                # XTilde = self.sampleXTilde(tx, ty, refBoneLengths)
-                #
-                # lossPYXTilde = torch.nn.CrossEntropyLoss()(self.modelEval(XTilde), ty)
-                # lossXXTilde = self.xXTildeLoss(tx, XTilde, refBoneLengths)
-                #
-                # lossPXTildeXY = lossPYXTilde + self.args.drvWeight * lossXXTilde
-
-                #lossPXY = torch.nn.CrossEntropyLoss()(self.modelEval(tx), ty)
-
-                #loss = self.args.xWeight * lossLogPX + self.args.xTildeWeight * lossPXTildeXY + self.args.clfWeight * lossPXY
-
-                #valLoss += loss.detach().item()
-                #valClfLoss += lossPYX.detach().item()
-                #vbatch += 1
-
                 pred = torch.argmax(self.modelEval(tx), dim=1)
                 diff = (pred - ty) != 0
                 misclassified += torch.sum(diff)
 
-            #valLoss /= vbatch
-            #valClfLoss /= vbatch
-            #logger.add_scalar('Loss/validation', valLoss, ep)
-            #logger.add_scalar('Loss/validation/clf', valClfLoss, ep)
             self.classifier.model.train()
-            # if valLoss < bestValLoss:
-            #     print(f"epoch: {ep} per epoch average validation loss improves from: {bestValLoss} to {valLoss}")
-            #     #modelFile = self.retFolder + '/minValLossModel_adtrained_' + str(valLoss) + '.pth'
-            #     #torch.save(self.classifier.model.state_dict(), modelFile)
-            #     bestValLoss = valLoss
-            # if valClfLoss < bestValClfLoss:
-            #     print(f"epoch: {ep} per epoch average clf validation loss improves from: {bestValClfLoss} to {valClfLoss}")
-            #     modelFile = self.retFolder + '/minValLossModel_adtrained.pth'
-            #     torch.save(self.classifier.model.state_dict(), modelFile)
-            #     bestValClfLoss = valClfLoss
+
             valClfAcc = 1 - misclassified / len(self.classifier.testloader.dataset)
             if valClfAcc > bestValClfAcc:
                 print(f"epoch: {ep} clf validation accuracy improves from: {bestValClfAcc} to {valClfAcc}")
@@ -338,16 +281,12 @@ class EBMATrainer(AdversarialTrainer):
             valEndTime = time.time()
             valTime += (valEndTime - valStartTime) / 3600
         return
-
-
     def bayesianAdversarialTrain(self):
 
         size = len(self.classifier.trainloader.dataset)
 
         bestLoss = [np.infty for i in range(self.args.bayesianModelNum)]
-        bestValLoss = [np.infty for i in range(self.args.bayesianModelNum)]
         bestClfLoss = [np.infty for i in range(self.args.bayesianModelNum)]
-        bestValClfLoss = [np.infty for i in range(self.args.bayesianModelNum)]
         bestValClfAcc = [0 for i in range(self.args.bayesianModelNum)]
         logger = SummaryWriter()
 
@@ -376,7 +315,6 @@ class EBMATrainer(AdversarialTrainer):
                     refBoneLengths = self.boneLengths(X)
 
                     # sample x and compute logP(X)
-                    #ySamples = torch.randint(0, self.args.classNum, (self.args.batchSize,))
 
                     XSamples = self.sampleX(X, i)
 
@@ -388,7 +326,7 @@ class EBMATrainer(AdversarialTrainer):
 
                     # compute logP(x_tilde|X, y)
 
-                    XTilde = self.sampleXTilde(X, y, refBoneLengths, i)
+                    XTilde = self.sampleXTilde(X, y, refBoneLengths)
 
                     lossPYXTilde = torch.nn.CrossEntropyLoss()(self.modelEval(XTilde, i), y)
                     lossXXTilde = self.xXTildeLoss(X, XTilde, refBoneLengths)
@@ -419,21 +357,15 @@ class EBMATrainer(AdversarialTrainer):
                 logger.add_scalar(('Loss/train/clf/model%d' % i), epClfLoss[i], ep)
                 if epLoss[i] < bestLoss[i]:
                     print(f"epoch: {ep} model: {i} per epoch average training loss improves from: {bestLoss[i]} to {epLoss[i]}")
-                    # modelFile = self.retFolder + '/' + str(i) + '_minLossAppendedModel_adtrained_' + str(epLoss[i]) + '.pth'
-                    # torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
                     bestLoss[i] = epLoss[i]
 
                 if epClfLoss[i] < bestClfLoss[i]:
                     print(f"epoch: {ep} model: {i} per epoch average training clf loss improves from: {bestClfLoss[i]} to {epClfLoss[i]}")
-                    #
-                    # modelFile = self.retFolder + '/' + str(i) + '_minLossAppendedModel_adtrained.pth'
-                    # torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
                     bestClfLoss[i] = epClfLoss[i]
 
                 valStartTime = time.time()
                 # run validation and save a model if the best validation loss so far has been achieved.
-                #valLoss = np.zeros(self.args.bayesianModelNum)
-                #valClfLoss = np.zeros(self.args.bayesianModelNum)
+
                 self.classifier.setEval(modelNo = i)
 
                 misclassified = 0
@@ -443,16 +375,7 @@ class EBMATrainer(AdversarialTrainer):
                     misclassified += torch.sum(diff)
 
                 valClfAcc = 1 - misclassified / len(self.classifier.testloader.dataset)
-                # valLoss[i] /= vbatch
-                # valClfLoss[i] /= vbatch
-                # logger.add_scalar(('Loss/validation/model%d' % i), valLoss[i], ep)
-                # logger.add_scalar(('Loss/validation/clf/model%d' % i), valClfLoss[i], ep)
-                #if valLoss[i] < bestValLoss[i]:
-                    #print(f"epoch: {ep} model: {i} per epoch average validation loss improves from: {bestValLoss[i]} to {valLoss[i]}")
-                    # modelFile = self.retFolder + '/' + str(i) + '_minValLossAppendedModel_adtrained_' + str(valLoss[i]) + '.pth'
-                    # torch.save(self.classifier.modelList[i].model.state_dict(), modelFile)
 
-                    #bestValLoss[i] = valLoss[i]
                 if valClfAcc > bestValClfAcc[i]:
                     print(f"epoch: {ep} model: {i} per epoch average clf validation acc improves from: {bestValClfAcc[i]} to {valClfAcc}")
                     modelFile = self.retFolder + '/' + str(i) + '_minValLossAppendedModel_adtrained.pth'
@@ -465,7 +388,5 @@ class EBMATrainer(AdversarialTrainer):
             print(f"epoch: {ep} time elapsed: {(time.time() - startTime) / 3600 - valTime} hours")
 
         return
-
-
 
 
