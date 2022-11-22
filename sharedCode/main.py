@@ -11,7 +11,7 @@ def parameteSettingForOptimizers(ap):
 
     #STGCN uses SGD, with initial learning rate 0.1, the rest uses 0.001 and Adam
     ap.add_argument("-lr", "--learningRate", type=float, required=False, help="to specify an adversarial attacker",
-                    default=0.1)
+                    default=0.001)
 def parameteSettingForAttackers(ap):
 
     ap.add_argument("-attacker", "--attacker", type=str, required=False, help="to specify an adversarial attacker",
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     ap.add_argument("-r", "--routine", type=str, required=True, help="program to run",
                     choices=["train", "test", "gatherCorrectPrediction", "attack", "adTrain", "bayesianTrain", "bayesianTest"])
     ap.add_argument("-classifier", "--classifier", type=str, required=True, help="choose the classifier to train/test/attack",
-                    choices=["3layerMLP"])
+                    choices=["3layerMLP", "ExtendedBayesian"])
     ap.add_argument("-dataset", "--dataset", type=str, required=True, help="choose the dataset",
                     choices=["hdm05", "ntu60", "ntu120"])
 
