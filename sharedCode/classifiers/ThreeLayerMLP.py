@@ -20,7 +20,7 @@ class ThreeLayerMLP(ActionClassifier):
 
     def createModel(self):
         class Classifier(nn.Module):
-            def __init__(self, dataloader):
+            def __init__(self, args, dataloader):
                 super().__init__()
 
                 self.dataShape = dataloader.dataset.data.shape
@@ -49,18 +49,18 @@ class ThreeLayerMLP(ActionClassifier):
         else:
             print("no model is created")
 
-        self.retFolder = self.args.retFolder + self.args.dataset + '/' + self.args.classifier + '/'
+        self.retFolder = self.args.retPath + self.args.dataset + '/' + self.args.classifier + '/'
 
         if len(self.args.trainedModelFile) > 0:
-            if len(self.args.args.adTrainer) == 0:
+            if len(self.args.adTrainer) == 0:
                 self.model.load_state_dict(torch.load(self.retFolder + self.args.trainedModelFile))
             else:
-                if self.args.args.bayesianTraining:
-                    self.model.load_state_dict(torch.load(self.args.retFolder + self.args.dataset + '/' +
-                                        self.args.args.baseClassifier + '/' + self.args.trainedModelFile))
+                if self.args.bayesianTraining:
+                    self.model.load_state_dict(torch.load(self.args.retPath + self.args.dataset + '/' +
+                                        self.args.baseClassifier + '/' + self.args.trainedModelFile))
                 else:
                     self.model.load_state_dict(
-                        torch.load(self.retFolder + self.args.args.adTrainer + '/' + self.args.trainedModelFile))
+                        torch.load(self.retFolder + self.args.adTrainer + '/' + self.args.trainedModelFile))
 
         self.configureOptimiser()
         self.classificationLoss()
@@ -68,12 +68,20 @@ class ThreeLayerMLP(ActionClassifier):
 
     def configureOptimiser(self):
 
-        self.optimiser = torch.optim.Adam(self.model.parameters(), lr=self.args.args.learningRate, betas=(0.9, 0.999),
+        self.optimiser = torch.optim.Adam(self.model.parameters(), lr=self.args.learningRate, betas=(0.9, 0.999),
                                           eps=1e-08, weight_decay=0.0001, amsgrad=False)
 
     def classificationLoss(self):
 
         self.classLoss = torch.nn.CrossEntropyLoss()
+
+    def setTrain(self):
+        self.model.train()
+    def setEval(self):
+        self.model.eval()
+
+    def modelEval(self, X, modelNo = -1):
+        return self.model(X)
 
     #this function is to train the classifier from scratch
     def train(self):
@@ -110,7 +118,7 @@ class ThreeLayerMLP(ActionClassifier):
                 if not os.path.exists(self.retFolder):
                     os.makedirs(self.retFolder)
                 print(f"epoch: {ep} per epoch average training loss improves from: {bestLoss} to {epLoss}")
-                torch.save(self.model.state_dict(), self.args.retFolder+ self.args.classifier + '/'+'minLossModel.pth')
+                torch.save(self.model.state_dict(), self.retFolder + '/'+'minLossModel.pth')
                 bestLoss = epLoss
 
             # run validation and save a model if the best validation loss so far has been achieved.
@@ -128,7 +136,7 @@ class ThreeLayerMLP(ActionClassifier):
             self.model.train()
             if valLoss < bestValLoss:
                 print(f"epoch: {ep} per epoch average validation loss improves from: {bestValLoss} to {valLoss}")
-                torch.save(self.model.state_dict(), self.args.retFolder + 'minValLossModel.pth')
+                torch.save(self.model.state_dict(), self.retFolder + 'minValLossModel.pth')
                 bestValLoss = valLoss
 
     #this function tests the trained classifier and also save correctly classified samples in 'adClassTrain.npz' for
@@ -149,8 +157,8 @@ class ThreeLayerMLP(ActionClassifier):
 
         error = misclassified / len(self.testloader.dataset)
         print(f"accuracy: {1-error:>4f}")
-        np.savetxt(self.args.retFolder + self.args.classifier + '/' + 'testRets.txt', results)
-        np.savetxt(self.args.retFolder + self.args.classifier + '/' + 'testGroundTruth.txt', self.testloader.dataset.rlabels)
+        np.savetxt(self.args.retPath + '/' + self.args.dataset + '/'+ self.args.classifier + '/' + 'testRets.txt', results)
+        np.savetxt(self.args.retPath +'/'+ self.args.dataset + '/' + self.args.classifier + '/' + 'testGroundTruth.txt', self.testloader.dataset.rlabels)
 
         return 1 - error
 
