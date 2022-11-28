@@ -93,7 +93,7 @@ Project Webpage: http://drhewang.com/pages/AAHAR.html
 ## Citation (Bibtex)
 Please cite our papers on action recognition attacks/defense!
 1. He Wang*, Yunfeng Diao*, Zichang Tan and Guodong Guo, Defending Black-box Skeleton-based Human Activity Classifiers, the AAAI conference on Aritificial Intelligence (AAAI) 2023.
-
+ 
     @InProceedings{Wang_Defending_2023,
     author={Wang, He and Diao, Yunfeng and Tan, Zichang and Guo, Guodong},
     booktitle={Proceedings of the AAAI Conference on Artificial Intelligence},
@@ -102,15 +102,14 @@ Please cite our papers on action recognition attacks/defense!
     month={June},
     }
 2.  Yunfeng Diao*, He Wang*, Tianjia Shao, Yong-Liang Yang, Kun Zhou, David Hogg, Understanding the Vulnerability of Skeleton-based Human Activity Recognition via Black-box Attack, arxiv 2022.
-
-  @misc{https://doi.org/10.48550/arxiv.2211.11312,
-  doi = {10.48550/ARXIV.2211.11312},
-  url = {https://arxiv.org/abs/2211.11312},
-  author = {Diao, Yunfeng and Wang, He and Shao, Tianjia and Yang, Yong-Liang and Zhou, Kun and Hogg, David},
-  title = {Understanding the Vulnerability of Skeleton-based Human Activity Recognition via Black-box Attack},
-  publisher = {arXiv},
-  year = {2022}
-}
+  
+    @misc{Diao_understanding_2022,
+    url = {https://arxiv.org/abs/2211.11312},
+    author = {Diao, Yunfeng and Wang, He and Shao, Tianjia and Yang, Yong-Liang and Zhou, Kun and Hogg, David},
+    title = {Understanding the Vulnerability of Skeleton-based Human Activity Recognition via Black-box Attack},
+    publisher = {arXiv},
+    year = {2022}
+    }
 
 3. He Wang, Feixiang He, Zhexi Peng, Tianjia Shao, Yongliang Yang, Kun Zhou and David Hogg, Understanding the Robustness of Skeleton-based Action Recognition under Adversarial Attack, CVPR 2021
 
