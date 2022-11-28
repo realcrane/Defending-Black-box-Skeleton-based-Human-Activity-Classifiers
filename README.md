@@ -129,7 +129,7 @@ Please cite our papers on action recognition attacks/defense!
     title={BASAR:Black-box Attack on Skeletal Action Recognition},
     year={2021},
     month={June},
-}
+    }
 
 ## Acknowledgments
 This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 899739 CrowdDNA, EPSRC (EP/R031193/1), NSF China (No. 61772462, No. U1736217), RCUK grant CAMERA (EP/M023281/1, EP/T014865/1) and the 100 Talents Program of Zhejiang University.
