@@ -92,7 +92,7 @@ Project Webpage: http://drhewang.com/pages/AAHAR.html
     * Initial Release
 ## Citation (Bibtex)
 Please cite our papers on action recognition attacks/defense!
-1. He Wang, Yunfeng Diao, Zichang Tan and Guodong Guo, Defending Black-box Skeleton-based Human Activity Classifiers, the AAAI conference on Aritificial Intelligence (AAAI) 2023.
+1. He Wang*, Yunfeng Diao*, Zichang Tan and Guodong Guo, Defending Black-box Skeleton-based Human Activity Classifiers, the AAAI conference on Aritificial Intelligence (AAAI) 2023.
 
     @InProceedings{Wang_Defending_2023,
     author={Wang, He and Diao, Yunfeng and Tan, Zichang and Guo, Guodong},
@@ -101,7 +101,18 @@ Please cite our papers on action recognition attacks/defense!
     year={2023},
     month={June},
     }
-2. He Wang, Feixiang He, Zhexi Peng, Tianjia Shao, Yongliang Yang, Kun Zhou and David Hogg, Understanding the Robustness of Skeleton-based Action Recognition under Adversarial Attack, CVPR 2021
+2.  Yunfeng Diao*, He Wang*, Tianjia Shao, Yong-Liang Yang, Kun Zhou, David Hogg, Understanding the Vulnerability of Skeleton-based Human Activity Recognition via Black-box Attack, arxiv 2022.
+
+  @misc{https://doi.org/10.48550/arxiv.2211.11312,
+  doi = {10.48550/ARXIV.2211.11312},
+  url = {https://arxiv.org/abs/2211.11312},
+  author = {Diao, Yunfeng and Wang, He and Shao, Tianjia and Yang, Yong-Liang and Zhou, Kun and Hogg, David},
+  title = {Understanding the Vulnerability of Skeleton-based Human Activity Recognition via Black-box Attack},
+  publisher = {arXiv},
+  year = {2022}
+}
+
+3. He Wang, Feixiang He, Zhexi Peng, Tianjia Shao, Yongliang Yang, Kun Zhou and David Hogg, Understanding the Robustness of Skeleton-based Action Recognition under Adversarial Attack, CVPR 2021
 
     @InProceedings{Wang_Understanding_2020,
     author={He Wang, Feixiang He, Zhexi Peng, Tianjia Shao, Yongliang Yang, Kun Zhou and David Hogg},
@@ -111,7 +122,7 @@ Please cite our papers on action recognition attacks/defense!
     month={June},
     }
 
-3. Yunfeng Diao, Tianjia Shao, Yongliang Yang, Kun Zhou and He Wang, BASAR:Black-box Attack on Skeletal Action Recognition, CVPR 2021
+4. Yunfeng Diao, Tianjia Shao, Yongliang Yang, Kun Zhou and He Wang, BASAR:Black-box Attack on Skeletal Action Recognition, CVPR 2021
 
     @InProceedings{Diao_Basar_2020,
     author={Yunfeng Diao, Tianjia Shao, Yongliang Yang, Kun Zhou and He Wang},
