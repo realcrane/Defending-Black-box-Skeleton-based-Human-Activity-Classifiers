@@ -76,7 +76,7 @@ class EBMATrainer(AdversarialTrainer):
         x_k = torch.autograd.Variable(initSample, requires_grad=True).to(device)
         # sgld
         for k in range(self.args.samplingStep):
-            f_prime = torch.autograd.grad(torch.logsumexp(self.modelEval(x_k), 0).sum(), [x_k], retain_graph=True)[0]
+            f_prime = torch.autograd.grad(torch.logsumexp(self.modelEval(x_k), 1).sum(), [x_k], retain_graph=True)[0]
             x_k.data += self.args.sgldLr * f_prime + np.sqrt(self.args.sgldLr*2) * self.args.sgldStd * torch.randn_like(x_k)
         if not self.args.bayesianTraining:
             self.classifier.model.train()
