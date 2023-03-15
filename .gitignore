@@ -118,6 +118,7 @@ dmypy.json
 .pyre/
 data/ntu60/
 data/ntu120/
+/result
 *.npy
 *.pkl
 data/ntu60/combineData.py
