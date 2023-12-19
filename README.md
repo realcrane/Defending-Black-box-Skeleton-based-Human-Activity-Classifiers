@@ -81,7 +81,7 @@ python main.py --help
 
 He Wang, Yunfeng Diao, Zichang Tan and Guodong Guo
 
-He Wang, h.e.wang@leeds.ac.uk, [Personal website](https://drhewang.com)
+He Wang, he_wang@ucl.ac.uk, [Personal website](https://drhewang.com)
 
 Yunfeng Diao, diaoyunfeng@hfut.edu.cn, [Faculty page](http://faculty.hfut.edu.cn/diaoyunfeng/en/index.htm)
 
